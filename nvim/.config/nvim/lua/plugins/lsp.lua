@@ -155,15 +155,8 @@ return {
           lspconfig.lua_ls.setup({
             settings = {
               Lua = {
-                diagnostics = {
-                  globals = { "vim" },
-                  disable = { "inject-field", "undefined-field", "missing-fields" },
-                },
-                runtime = { version = "LuaJIT" },
-                workspace = {
-                  library = { vim.env.VIMRUNTIME },
-                  checkThirdParty = false,
-                },
+                -- On désactive juste la télémétrie,
+                -- lazydev.nvim s'occupe de TOUT le reste (API vim, workspace, etc.)
                 telemetry = { enable = false },
               },
             },
