@@ -22,15 +22,25 @@ return {
     notifier = { enabled = true, timeout = 3000 },
     picker = {
       enabled = true,
-      layout = {
-        preset = "default", -- ou "telescope" selon ton design préféré
-        layout = {
-          width = 0.95, -- 90% de la largeur de l'écran (au lieu de 0.8 par défaut)
-          height = 0.95, -- 90% de la hauteur de l'écran (au lieu de 0.8 par défaut)
-        },
-      },
       sources = {
-        files = { hidden = true },
+        files = {
+          hidden = true,
+          layout = {
+            layout = {
+              width = 0.95,
+              height = 0.95,
+              box = "horizontal",
+              border = "rounded",
+              {
+                box = "vertical",
+                width = 0.3,
+                { win = "input", height = 1, border = "bottom" },
+                { win = "list", border = "none" },
+              },
+              { win = "preview", border = "left", width = 0.7 },
+            },
+          },
+        },
         gh_issue = {},
         gh_pr = {},
       },
