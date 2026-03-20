@@ -38,7 +38,7 @@ vim.opt.number = true -- Show absolute line numbers
 vim.opt.relativenumber = true -- Show relative line numbers (hybrid with number=true)
 vim.opt.numberwidth = 4 -- Minimum width of number column
 vim.opt.signcolumn = "yes:1" -- Always show sign column with width of 1
-vim.opt.cursorline = false -- Don't highlight the current line
+vim.opt.cursorline = true -- Don't highlight the current line
 vim.opt.wrap = false -- Don't wrap long lines
 vim.opt.breakindent = true -- Wrapped lines preserve indentation
 vim.opt.showmode = false -- Don't show mode in command line (shown in statusline)
@@ -90,6 +90,8 @@ vim.opt.conceallevel = 0 -- Show all text normally (no concealment)
 -- ============================================================================
 vim.opt.title = true -- Set window title to filename
 vim.opt.guifont = "monospace:h17" -- Font for GUI Neovim (e.g., Neovide)
+-- Minimal number of screen lines to keep above and below the cursor.
+vim.o.scrolloff = 999
 
 -- ============================================================================
 -- Filetype Detection
