@@ -214,7 +214,7 @@ return {
           "yamlls",
           -- Linters
           "eslint_d",
-          "luacheck",
+          -- "luacheck",
           "golangci-lint",
           "shellcheck",
           "markdownlint",

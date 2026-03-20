@@ -19,20 +19,20 @@ return {
       "--issues-exit-code=0",
     }
 
-    -- Configure luacheck
-    local luacheck = lint.linters.luacheck
-    luacheck.args = {
-      "--formatter",
-      "plain",
-      "--codes",
-      "--ranges",
-      "--filename",
-      function()
-        return vim.api.nvim_buf_get_name(0)
-      end,
-      "-",
-    }
-    luacheck.stdin = true
+    -- -- Configure luacheck
+    -- local luacheck = lint.linters.luacheck
+    -- luacheck.args = {
+    --   "--formatter",
+    --   "plain",
+    --   "--codes",
+    --   "--ranges",
+    --   "--filename",
+    --   function()
+    --     return vim.api.nvim_buf_get_name(0)
+    --   end,
+    --   "-",
+    -- }
+    -- luacheck.stdin = true
 
     -- Configure eslint_d
     if lint.linters.eslint_d then
@@ -104,7 +104,7 @@ return {
       css = { "stylelint" },
       scss = { "stylelint" },
       less = { "stylelint" },
-      lua = { "luacheck" },
+      -- lua = { "luacheck" },
       python = { "ruff", "mypy" },
       sh = { "shellcheck" },
       bash = { "shellcheck" },
