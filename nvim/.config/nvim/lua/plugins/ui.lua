@@ -190,30 +190,35 @@ return {
   -- Markdown Preview (browser-based with mermaid support)
   -- ════════════════════════════════════════════════════════════════════════════
   {
-    "iamcco/markdown-preview.nvim",
-    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    "selimacerbas/markdown-preview.nvim",
+    dependencies = { "selimacerbas/live-server.nvim" },
     ft = { "markdown" },
-    build = "cd app && npm install",
-    init = function()
-      vim.g.mkdp_filetypes = { "markdown" }
-      vim.g.mkdp_auto_close = 1
-      vim.g.mkdp_theme = "dark"
-      -- Enable mermaid, katex, and other features
-      vim.g.mkdp_preview_options = {
-        mermaid = { theme = "dark" },
-        katex = {},
-        disable_sync_scroll = 0,
-        sync_scroll_type = "middle",
-        hide_yaml_meta = 1,
-        sequence_diagrams = {},
-        flowchart_diagrams = {},
-      }
+    config = function()
+      require("markdown_preview").setup({
+        port = 8421,
+        open_browser = true,
+        debounce_ms = 300,
+        scroll_sync = true,
+      })
     end,
     keys = {
+      { "<leader>mp", "<cmd>MarkdownPreview<cr>", desc = "Markdown Preview", ft = "markdown" },
       {
-        "<leader>mp",
-        "<cmd>MarkdownPreviewToggle<cr>",
-        desc = "Markdown Preview",
+        "<leader>mps",
+        "<cmd>MarkdownPreview<cr>",
+        desc = "Markdown: Start preview",
+        ft = "markdown",
+      },
+      {
+        "<leader>mpS",
+        "<cmd>MarkdownPreviewStop<cr>",
+        desc = "Markdown: Stop preview",
+        ft = "markdown",
+      },
+      {
+        "<leader>mpr",
+        "<cmd>MarkdownPreviewRefresh<cr>",
+        desc = "Markdown: Refresh preview",
         ft = "markdown",
       },
     },
