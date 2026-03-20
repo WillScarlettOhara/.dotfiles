@@ -155,7 +155,6 @@ return {
           lspconfig.lua_ls.setup({
             settings = {
               Lua = {
-                -- On désactive juste la télémétrie,
                 -- lazydev.nvim s'occupe de TOUT le reste (API vim, workspace, etc.)
                 telemetry = { enable = false },
               },

@@ -515,6 +515,9 @@ return {
     priority = 1000,
     config = function()
       require("nordic").setup({
+        on_palette = function(_) end,
+        after_palette = function(_) end,
+        on_highlight = function(_, _) end,
         bold_keywords = false,
         italic_comments = false,
         transparent = { bg = false, float = false },

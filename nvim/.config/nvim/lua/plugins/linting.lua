@@ -55,7 +55,7 @@ return {
       args = { "--test", "--json" },
       stream = "stdout",
       ignore_exitcode = true,
-      parser = function(output, bufnr)
+      parser = function(output, _)
         local diagnostics = {}
         if not output or output == "" then
           return diagnostics
@@ -63,7 +63,7 @@ return {
 
         local ok, decoded = pcall(vim.json.decode, output)
         if ok and decoded and decoded.files then
-          for file, issues in pairs(decoded.files) do
+          for _, issues in pairs(decoded.files) do
             if type(issues) == "table" and #issues > 0 then
               for _, issue in ipairs(issues) do
                 table.insert(diagnostics, {
@@ -148,7 +148,7 @@ return {
 
     local function is_file_too_large()
       local max_size = 1024 * 1024
-      local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(0))
+      local ok, stats = pcall(vim.ui.fs_stat, vim.api.nvim_buf_get_name(0))
       return ok and stats and stats.size > max_size
     end
 
