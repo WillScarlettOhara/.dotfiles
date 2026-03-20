@@ -8,7 +8,7 @@ return {
     dashboard = { enabled = true },
     explorer = { enabled = true },
     image = {
-      enabled = false,
+      enabled = true,
       doc = {
         enabled = true,
         inline = true,
