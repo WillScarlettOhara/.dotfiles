@@ -129,6 +129,13 @@ return {
       c = { "cppcheck", "cpplint" },
       cpp = { "cppcheck", "cpplint" },
     }
+    lint.linters.markdownlint.args = {
+      "--disable",
+      "MD060",
+      "MD033",
+      "MD032",
+      "--",
+    }
 
     -- ══════════════════════════════════════════════════════════════════════════
     -- Performance Optimizations
