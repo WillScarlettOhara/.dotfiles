@@ -1,80 +1,55 @@
--- function for simplifying the views options
-local function getviews()
-  local views = {}
-  local all_views = {
-    "notify",
-    "split",
-    "vsplit",
-    "popup",
-    "mini",
-    "cmdline",
-    "cmdline_popup",
-    "cmdline_output",
-    "messages",
-    "confirm",
-    "hover",
-    "popupmenu",
-  }
-  for _, view in ipairs(all_views) do
-    views[view] = { scrollbar = false }
-  end
-  views["split"].enter = true
-  views["mini"] = { scrollbar = false, timeout = 5000 } -- 5 secondes
-  views["notify"] = { scrollbar = false, timeout = 5000 }
-  return views
-end
-
 return {
   "folke/noice.nvim",
   event = "VeryLazy",
-  dependencies = { "MunifTanjim/nui.nvim" },
-  opts = {
-    views = getviews(),
-    lsp = {
-      override = {
-        ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
-        ["vim.lsp.util.stylize_markdown"] = true,
-        ["cmp.entry.get_documentation"] = true,
-      },
-      hover = { enabled = true },
-      signature = { enabled = true },
-    },
-    routes = {
-      {
-        filter = {
-          event = "msg_show",
-          any = {
-            { find = "%d+L, %d+B" },
-            { find = "lines yanked" },
-            { find = "; before #" },
-            { find = "; after #" },
-          },
-        },
-        view = "mini",
-      },
-      {
-        filter = {
-          any = {
-            { event = { "notify", "msg_show" }, find = "No information available" },
-            { event = { "notify", "msg_show" }, find = "minifiles is not supported" },
-            { event = "msg_show", kind = "", find = "written" },
-          },
-        },
-        opts = { skip = true },
-      },
-    },
-    presets = {
-      bottom_search = true,
-      command_palette = true,
-      long_message_to_split = true,
-      lsp_doc_border = true,
-    },
+  dependencies = {
+    "MunifTanjim/nui.nvim",
   },
-  config = function(_, opts)
-    local map = vim.keymap.set
-    if vim.o.filetype == "lazy" then
-      vim.cmd([[messages clear]])
-    end
+  config = function()
+    require("noice").setup({
+      lsp = {
+        override = {
+          ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+          ["vim.lsp.util.stylize_markdown"] = true,
+          ["cmp.entry.get_documentation"] = true, -- Gardé par sécurité même avec Blink
+        },
+
+        -- Noice prend le relais pour afficher les fenêtres de documentation LSP.
+        -- Tes raccourcis actuels (`K` pour Hover et `<C-k>` pour Signature)
+        -- déclencheront automatiquement les belles fenêtres de Noice !
+        hover = { enabled = true },
+        signature = { enabled = true },
+      },
+
+      -- Les "presets" donnent un look très "VS Code / Moderne" instantanément
+      presets = {
+        bottom_search = true, -- La recherche avec '/' reste en bas (plus lisible)
+        command_palette = true, -- La ligne de commande ':' s'ouvre au centre de l'écran
+        long_message_to_split = true, -- Les très longs messages d'erreur s'ouvrent dans un split au lieu de bloquer l'écran
+        inc_rename = false, -- À passer à true si un jour tu installes le plugin `inc-rename.nvim`
+        lsp_doc_border = true, -- Ajoute de belles bordures aux fenêtres d'information LSP
+      },
+
+      -- ════════════════════════════════════════════════════════════════════
+      -- Routage des messages (Pour ne pas spammer ton écran)
+      -- ════════════════════════════════════════════════════════════════════
+      routes = {
+        {
+          -- Intercepte les messages très courants de Vim (ex: "X lines yanked", "written")
+          filter = {
+            event = "msg_show",
+            any = {
+              { find = "%d+L, %d+B" }, -- Sauvegarde de fichier
+              { find = "; before #" }, -- Undo
+              { find = "; after #" }, -- Redo
+              { find = "lines yanked" }, -- Copie
+            },
+          },
+          -- Au lieu d'en faire une grosse notification Snacks, on les affiche
+          -- discrètement (view = "mini") en bas à droite de l'écran.
+          view = "mini",
+        },
+      },
+    })
 
     -- ════════════════════════════════════════════════════════════════════
     -- Keymaps spécifiques à Noice (En plus de ceux de Snacks)
