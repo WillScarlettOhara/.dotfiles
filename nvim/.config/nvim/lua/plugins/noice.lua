@@ -28,6 +28,10 @@ return {
         inc_rename = false, -- À passer à true si un jour tu installes le plugin `inc-rename.nvim`
         lsp_doc_border = true, -- Ajoute de belles bordures aux fenêtres d'information LSP
       },
+      popupmenu = {
+        enabled = true,
+        backend = "nui", -- Laisse "nui" pour que Noice dessine le menu de base si Blink ne le fait pas
+      },
 
       -- ════════════════════════════════════════════════════════════════════
       -- Routage des messages (Pour ne pas spammer ton écran)

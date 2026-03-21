@@ -31,11 +31,24 @@ return {
           ["<C-f>"] = {},
         },
         cmdline = {
-          enabled = false,
+          enabled = true,
           completion = { menu = { auto_show = true } },
           keymap = {
             ["<CR>"] = { "accept_and_enter", "fallback" },
+            -- Ajoute le preset par défaut pour que Tab et les flèches fonctionnent bien
+            preset = "cmdline",
           },
+          -- On explique à Blink quelles sources utiliser selon si tu cherches (/) ou si tu tapes une commande (:)
+          sources = function()
+            local type = vim.fn.getcmdtype()
+            if type == "/" or type == "?" then
+              return { "buffer" }
+            end
+            if type == ":" then
+              return { "cmdline", "path" }
+            end
+            return {}
+          end,
         },
         completion = {
           menu = {
