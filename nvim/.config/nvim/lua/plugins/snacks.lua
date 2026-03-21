@@ -17,32 +17,92 @@ return {
         max_height = 40,
       },
     },
-    indent = { enabled = false },
+    -- indent guide lines
+    indent = {
+      enabled = true,
+      animate = {
+        enabled = false,
+      },
+      scope = {
+        enabled = false,
+      },
+
+      -- can be a list of hl groups to cycle through
+      indent = {
+        hl = {
+          "SnacksIndent1",
+          "SnacksIndent2",
+          "SnacksIndent3",
+          "SnacksIndent4",
+          "SnacksIndent5",
+          "SnacksIndent6",
+          "SnacksIndent7",
+        },
+      },
+    },
     input = { enabled = true },
-    notifier = { enabled = true, timeout = 3000 },
+    -- notifier
+    notifier = {
+      enabled = true,
+      timeout = 2000,
+      style = "compact",
+      width = { min = 35, max = 0.8 },
+      height = { min = 1, max = 0.8 },
+    },
+    -- picker
     picker = {
       enabled = true,
-      sources = {
-        files = {
-          hidden = true,
+      prompt = "> ",
+      ui_select = true,
+      formatters = {
+        file = {
+          filename_first = true,
+          truncate = 100, -- truncate the file path to (roughly) this length
+        },
+      },
+      layouts = {
+        -- default layout
+        default = {
           layout = {
-            layout = {
-              width = 0.95,
-              height = 0.95,
-              box = "horizontal",
-              border = "rounded",
-              {
-                box = "vertical",
-                width = 0.3,
-                { win = "input", height = 1, border = "bottom" },
-                { win = "list", border = "none" },
-              },
-              { win = "preview", border = "left", width = 0.7 },
+            box = "horizontal",
+            width = 0.99,
+            height = 0.99,
+            {
+              box = "vertical",
+              border = "bold",
+              title = "{source} {live}",
+              title_pos = "center",
+              { win = "input", height = 1, border = "bottom" },
+              { win = "list", border = "none" },
             },
+            { win = "preview", title = "{preview}", border = "bold", width = 0.5 },
           },
         },
-        gh_issue = {},
-        gh_pr = {},
+        -- vertical layout
+        vertical = {
+          layout = {
+            backdrop = false,
+            width = 0.99,
+            height = 0.99,
+            box = "vertical",
+            border = "bold",
+            title = "{title} {live} {flags}",
+            title_pos = "center",
+            { win = "input", height = 1, border = "bottom" },
+            { win = "list", border = "none" },
+            { win = "preview", title = "{preview}", height = 0.4, border = "top" },
+          },
+        },
+      },
+      win = {
+        -- input window
+        input = {
+          keys = {
+            -- ["<C-h>"] = { "toggle_hidden", mode = { "i", "n" } },
+            ["<Esc>"] = { "close", mode = { "i", "n" } },
+            -- ["<C-,>"] = { "toggle_preview", mode = { "i", "n" } },
+          },
+        },
       },
     },
     quickfile = { enabled = true },
