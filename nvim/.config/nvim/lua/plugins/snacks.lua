@@ -63,6 +63,16 @@ return {
           truncate = 100, -- truncate the file path to (roughly) this length
         },
       },
+      sources = {
+        explorer = {
+          hidden = true,
+          ignored = true,
+        },
+        files = {
+          hidden = true,
+          ignored = true,
+        },
+      },
       layouts = {
         -- default layout
         default = {
@@ -292,6 +302,13 @@ return {
         Snacks.picker.files({ cwd = vim.fn.stdpath("config") })
       end,
       desc = "Config Files",
+    },
+    {
+      "<leader>fC",
+      function()
+        Snacks.picker.grep({ cwd = vim.fn.stdpath("config") })
+      end,
+      desc = "Grep Config Files",
     },
     {
       "<leader>fg",
