@@ -29,7 +29,7 @@ return {
         {
           pane = 2,
           section = "terminal",
-          cmd = "lsd --tree --depth 3 --color always 2>/dev/null || tree -L 3 -C 2>/dev/null",
+          cmd = "COLORTERM=truecolor lsd --tree --depth 3 --color always --group-dirs last 2>/dev/null || tree -L 3 -C 2>/dev/null",
           title = "📁 Project",
           height = 50,
           padding = 1,
