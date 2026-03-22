@@ -74,7 +74,12 @@ vim.keymap.set("v", "p", '"_dP', { desc = "Paste (no yank)" })
 vim.keymap.set("n", "YY", "va{Vy", { desc = "Yank Block {}" })
 
 -- Split line (opposite of J)
-vim.keymap.set("n", "X", ":keeppatterns substitute/\\s*\\%#\\s*/\\r/e <bar> normal! ==^<cr>", { desc = "Split Line", silent = true })
+vim.keymap.set(
+  "n",
+  "X",
+  ":keeppatterns substitute/\\s*\\%#\\s*/\\r/e <bar> normal! ==^<cr>",
+  { desc = "Split Line", silent = true }
+)
 
 -- Select all
 vim.keymap.set("n", "<C-a>", "ggVG", { desc = "Select All" })
@@ -91,7 +96,3 @@ vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit Insert" })
 -- ════════════════════════════════════════════════════════════════════════════
 
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit Terminal Mode" })
-vim.keymap.set("t", "<C-h>", "<cmd>wincmd h<cr>", { desc = "Go Left" })
-vim.keymap.set("t", "<C-j>", "<cmd>wincmd j<cr>", { desc = "Go Down" })
-vim.keymap.set("t", "<C-k>", "<cmd>wincmd k<cr>", { desc = "Go Up" })
-vim.keymap.set("t", "<C-l>", "<cmd>wincmd l<cr>", { desc = "Go Right" })
