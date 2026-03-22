@@ -5,7 +5,61 @@ return {
   ---@type snacks.Config
   opts = {
     bigfile = { enabled = true },
-    dashboard = { enabled = true },
+    dashboard = {
+      enabled = true,
+      preset = {
+        header = [[
+  ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗
+  ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║
+  ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║
+  ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
+  ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
+  ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝]],
+      },
+      sections = {
+        { section = "header" },
+        { section = "keys", gap = 1, padding = 1 },
+        {
+          pane = 1,
+          section = "recent_files",
+          limit = 8,
+          padding = 1,
+          title = "Recent Files",
+        },
+        {
+          pane = 2,
+          section = "terminal",
+          cmd = "lsd --tree --depth 3 --color always 2>/dev/null || tree -L 3 -C 2>/dev/null",
+          title = "📁 Project",
+          height = 50,
+          padding = 1,
+        },
+        {
+          pane = 1,
+          section = "projects",
+          limit = 3,
+          padding = 1,
+          title = "Projects",
+        },
+        {
+          pane = 1,
+          section = "terminal",
+          cmd = "git log --oneline -3 2>/dev/null || echo 'No git repo'",
+          title = "Git Log",
+          height = 3,
+          padding = 1,
+        },
+        {
+          pane = 1,
+          section = "terminal",
+          cmd = "shuf --random-source=/dev/urandom -n1 ~/.config/nvim/tips.txt 2>/dev/null",
+          title = "💡 Tip",
+          height = 2,
+          padding = 1,
+        },
+        { section = "startup" },
+      },
+    },
     explorer = {
       enabled = true,
       replace_netrw = false,
