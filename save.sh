@@ -1,0 +1,122 @@
+#!/bin/bash
+
+BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
+LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
+
+RSYNC_CMD=(rsync -auL --delete --stats)
+RSYNC_FIREFOX=(rsync -auL --delete --stats
+  --exclude=cache2/
+  --exclude=Cache/
+  --exclude='*.sqlite-wal'
+  --exclude='*.sqlite-shm'
+  --exclude=minidumps/
+  --exclude=crash-reports/
+  --exclude=thumbnails/)
+RSYNC_THUNDERBIRD=(rsync -auL --delete --stats
+  --exclude=cache/
+  --exclude=Cache/
+  --exclude=lock
+  --exclude='*.sqlite-wal'
+  --exclude='*.sqlite-shm'
+  --exclude=shader-cache/
+  --exclude=datareporting/
+  --exclude=saved-telemetry-pings/
+  --exclude='ImapMail/'
+  --exclude='ImapMail/*/tmp/')
+
+log() {
+  printf "%s\n" "$1" | tee -a "$LOG_FILE"
+}
+
+run() {
+  local label="$1"
+  shift
+  log "  $label"
+  if "$@" >>"$LOG_FILE" 2>&1; then
+    log "  ✅ OK"
+  else
+    log "  ⚠️  Erreurs (voir log)"
+  fi
+}
+
+mkdir -p "$BACKUP_DIR"/{Dotfiles,Configs_App,Scripts_et_Raccourcis,Services_Systemd/User,Profils_Lourds,Secrets,Sigil,GJS_OSK,Machines_Virtuelles}
+
+log "======================================"
+log "🚀 Démarrage : $(date '+%d/%m/%Y %H:%M:%S')"
+log "======================================"
+
+log ""
+log "📄 Dotfiles..."
+run ".zshrc / .p10k.zsh / .gitconfig" "${RSYNC_CMD[@]}" ~/.zshrc ~/.p10k.zsh ~/.gitconfig "$BACKUP_DIR/Dotfiles/"
+run ".tmux.conf" "${RSYNC_CMD[@]}" --exclude='.tmux/plugins/' ~/.tmux.conf "$BACKUP_DIR/Dotfiles/"
+
+log ""
+log "⚙️  Configs App..."
+run "nvim" "${RSYNC_CMD[@]}" ~/.config/nvim "$BACKUP_DIR/Configs_App/"
+run "kitty" "${RSYNC_CMD[@]}" ~/.config/kitty "$BACKUP_DIR/Configs_App/"
+run "lsd" "${RSYNC_CMD[@]}" ~/.config/lsd "$BACKUP_DIR/Configs_App/" || true
+run "mpv" "${RSYNC_CMD[@]}" ~/.config/mpv "$BACKUP_DIR/Configs_App/" || true
+run "starship" "${RSYNC_CMD[@]}" ~/.config/starship.toml "$BACKUP_DIR/Configs_App/" || true
+
+log ""
+log "🔧 Scripts et raccourcis..."
+# SC2088 corrigé en remplaçant "~" par "$HOME" dans les guillemets
+run "$HOME/.local/bin" "${RSYNC_CMD[@]}" ~/.local/bin/ "$BACKUP_DIR/Scripts_et_Raccourcis/bin/"
+run "$HOME/.local/share/applications" "${RSYNC_CMD[@]}" ~/.local/share/applications/ "$BACKUP_DIR/Scripts_et_Raccourcis/applications/"
+
+log ""
+log "🔄 Services Systemd..."
+run "systemd/user" "${RSYNC_CMD[@]}" ~/.config/systemd/user/ "$BACKUP_DIR/Services_Systemd/User/"
+
+log ""
+log "🦊 Firefox..."
+run ".mozilla" "${RSYNC_FIREFOX[@]}" ~/.mozilla "$BACKUP_DIR/Profils_Lourds/"
+
+log ""
+log "📧 Thunderbird..."
+run ".thunderbird" "${RSYNC_THUNDERBIRD[@]}" ~/.thunderbird "$BACKUP_DIR/Profils_Lourds/"
+
+log ""
+log "📚 LibreOffice et Calibre..."
+run "libreoffice" "${RSYNC_CMD[@]}" --exclude='4/cache/' ~/.config/libreoffice "$BACKUP_DIR/Profils_Lourds/"
+run "calibre" "${RSYNC_CMD[@]}" --exclude='caches/' ~/.config/calibre "$BACKUP_DIR/Profils_Lourds/" || true
+
+log ""
+log "📖 Sigil..."
+run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Inspector-Cache/' --exclude='Preview-Cache/' --exclude='local-devtools/' --exclude='local-storage/' --exclude='workspace/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
+
+log ""
+log "⌨️  GJS OSK..."
+run "gnome extensions" "${RSYNC_CMD[@]}" ~/.local/share/gnome-shell/extensions/ "$BACKUP_DIR/GJS_OSK/" || true
+dconf dump /org/gnome/shell/extensions/gjsosk/ >"$BACKUP_DIR/GJS_OSK/gjsosk_settings.ini" 2>/dev/null || true
+
+log ""
+log "🔐 Secrets..."
+run ".ssh" "${RSYNC_CMD[@]}" ~/.ssh "$BACKUP_DIR/Secrets/"
+run "rclone.conf" "${RSYNC_CMD[@]}" ~/.config/rclone/rclone.conf "$BACKUP_DIR/Secrets/"
+
+log ""
+log "🖱️  Bluetooth..."
+run "bluetooth" sudo "${RSYNC_CMD[@]}" /var/lib/bluetooth/ "$BACKUP_DIR/Secrets/bluetooth/"
+sudo chown -R "$USER:$USER" "$BACKUP_DIR/Secrets/bluetooth/" 2>/dev/null || true
+
+log ""
+log "🖥️  Machine Virtuelle win11..."
+NOM_VM="win11"
+sudo virsh dumpxml "$NOM_VM" | tee "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" >/dev/null
+log "  Copie du disque VM en cours..."
+
+# On demande poliment à shellcheck d'ignorer ce faux positif :
+# shellcheck disable=SC2024
+if sudo "${RSYNC_CMD[@]}" "/var/lib/libvirt/images/${NOM_VM}.qcow2" "$BACKUP_DIR/Machines_Virtuelles/" >>"$LOG_FILE" 2>&1; then
+  sudo chown "$USER:$USER" "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2"
+  log "  ✅ OK"
+else
+  log "  ⚠️  Erreurs (voir log)"
+fi
+
+log ""
+log "======================================"
+log "✅ Sauvegarde terminée : $(date '+%d/%m/%Y %H:%M:%S')"
+log "📋 Log : $LOG_FILE"
+log "======================================"
