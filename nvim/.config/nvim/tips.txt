@@ -1,0 +1,80 @@
+ciw → change inner word depuis n'importe où dans le mot
+diw → supprime inner word sans toucher aux espaces autour
+yiw → copie inner word
+viw → sélectionne inner word
+ci" → change le contenu entre guillemets
+ca( → change tout incluant les parenthèses
+<C-o> → revenir à la position précédente dans l'historique
+<C-i> → avancer dans l'historique des positions
+gd → aller à la définition du symbole sous le curseur
+gr → voir toutes les références du symbole
+<leader>sg → grep dans tout le projet
+<leader>sw → grep le mot sous le curseur
+<leader>su → historique complet des undos avec preview
+<leader>sr → voir et coller depuis les registres
+"0p → coller le dernier yank (ignore les suppressions)
+"_d → supprimer sans polluer le registre
+vaf → sélectionner la fonction entière (treesitter)
+vif → sélectionner l'intérieur de la fonction
+]f / [f → aller à la fonction suivante/précédente
+]c / [c → aller au prochain changement git
+<leader>gg → ouvrir lazygit
+<leader>ghs → stage le hunk sous le curseur
+<leader>ghr → reset le hunk sous le curseur
+<leader>ghb → blame de la ligne courante
+% → aller au bracket/parenthèse correspondant
+* → rechercher le mot sous le curseur vers le bas
+# → rechercher le mot sous le curseur vers le haut
+n / N → résultat suivant/précédent centré automatiquement
+<C-/> → ouvrir un terminal flottant
+<Esc><Esc> → sortir du mode terminal
+H → début de ligne (raccourci pour ^)
+L → fin de ligne (raccourci pour g_)
+<S-h> / <S-l> → buffer précédent/suivant
+[b / ]b → buffer précédent/suivant
+J en visuel → déplacer les lignes sélectionnées vers le bas
+K en visuel → déplacer les lignes sélectionnées vers le haut
+< / > en visuel → indenter et rester en mode visuel
+YY → copier le bloc {} entier
+X → split la ligne (opposé de J)
+<C-a> → sélectionner tout le fichier
+jj ou jk → sortir du mode insertion
+saiw) → entourer le mot avec des parenthèses (mini.surround)
+sd' → supprimer les guillemets autour (mini.surround)
+sr)" → remplacer ) par " (mini.surround)
+<leader>uZ → zoom sur la fenêtre active (toggle)
+<leader>uz → mode zen (focus)
+<leader>cd → afficher le diagnostic de la ligne courante
+[d / ]d → diagnostic précédent/suivant
+<leader>ca → code action sur le curseur
+<leader>cr → renommer le symbole
+K → hover documentation LSP
+<C-k> → aide signature LSP
+<leader>ls → symboles du document
+<leader>lS → symboles du workspace
+<leader>bb → switcher de buffer avec preview
+dd dans le picker → fermer le buffer depuis la liste
+<leader>fp → liste des projets récents
+<leader>fc → fichiers de config nvim
+<leader>fC → grep dans les fichiers de config
+gy → aller à la définition du type
+gi → aller à l'implémentation
+gD → aller à la déclaration
+<leader>gh → historique noice
+<leader>nn → historique des notifications
+q: → historique des commandes vim
+@: → rejouer la dernière commande
+<leader>s: → historique des commandes via picker
+za → toggle fold
+zM → fermer tous les folds
+zR → ouvrir tous les folds
+<leader>uT → toggle treesitter
+<leader>uD → toggle diagnostics
+<leader>ui → toggle indent guides
+<leader>uh → toggle inlay hints
+g. → toggle fichiers cachés dans oil
+<C-p> dans oil → prévisualiser le fichier
+- → ouvrir oil dans le dossier courant
+<leader>e → toggle l'explorateur latéral
+Shift+H / Shift+I dans explorer → toggle hidden/ignored
+g? → aide contextuelle (oil, explorer, etc.)
