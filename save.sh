@@ -39,7 +39,7 @@ run() {
   fi
 }
 
-mkdir -p "$BACKUP_DIR"/{Dotfiles,Configs_App,Scripts_et_Raccourcis,Services_Systemd/User,Profils_Lourds,Secrets,Sigil,GJS_OSK,Machines_Virtuelles}
+mkdir -p "$BACKUP_DIR"/{Dotfiles,Configs_App,Scripts_et_Raccourcis,Services_Systemd/User,Services_Systemd/System,Profils_Lourds,Secrets,Sigil,GJS_OSK,Machines_Virtuelles}
 
 log "======================================"
 log "🚀 Démarrage : $(date '+%d/%m/%Y %H:%M:%S')"
@@ -67,6 +67,11 @@ run "$HOME/.local/share/applications" "${RSYNC_CMD[@]}" ~/.local/share/applicati
 log ""
 log "🔄 Services Systemd..."
 run "systemd/user" "${RSYNC_CMD[@]}" ~/.config/systemd/user/ "$BACKUP_DIR/Services_Systemd/User/"
+
+log ""
+log "🔧 Services Systemd système..."
+run "systemd/system mounts" sudo "${RSYNC_CMD[@]}" /etc/systemd/system/*.mount "$BACKUP_DIR/Services_Systemd/System/"
+sudo chown -R "$USER:$USER" "$BACKUP_DIR/Services_Systemd/System/" 2>/dev/null || true
 
 log ""
 log "🦊 Firefox..."
