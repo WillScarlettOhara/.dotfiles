@@ -3,38 +3,8 @@
 BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
-RSYNC_CMD=(rsync -auL --delete --stats)
-RSYNC_FIREFOX=(rsync -auL --delete --stats
-  --exclude=cache2/
-  --exclude=Cache/
-  --exclude='*.sqlite-wal'
-  --exclude='*.sqlite-shm'
-  --exclude='*.sqlite-journal'
-  --exclude=minidumps/
-  --exclude=crashes/
-  --exclude='Crash Reports/'
-  --exclude='Pending Pings/'
-  --exclude=thumbnails/
-  --exclude=sessionstore-backups/
-  --exclude=SiteSecurityServiceState.bin
-  --exclude=AlternateServices.bin)
-RSYNC_THUNDERBIRD=(rsync -auL --delete --stats
-  --exclude=cache/
-  --exclude=Cache/
-  --exclude=lock
-  --exclude=parent.lock
-  --exclude='*.sqlite-wal'
-  --exclude='*.sqlite-shm'
-  --exclude=shader-cache/
-  --exclude=datareporting/
-  --exclude=saved-telemetry-pings/
-  --exclude=crashes/
-  --exclude=minidumps/
-  --exclude=scheduled-notifications/
-  --exclude=session.json
-  --exclude=session.json.backup
-  --exclude='ImapMail/'
-  --exclude='ImapMail/*/tmp/')
+RSYNC_CMD=(rsync -auL --delete --info=progress2)
+
 
 log() {
   printf "%s\n" "$1" | tee -a "$LOG_FILE"
@@ -44,7 +14,26 @@ run() {
   local label="$1"
   shift
   log "  $label"
-  if "$@" >>"$LOG_FILE" 2>&1; then
+  # On utilise 'tee' pour voir l'action en direct dans le terminal tout en gardant le log
+  if "$@" 2>&1 | tee -a "$LOG_FILE"; then
+    log "  ✅ OK"
+  else
+    log "  ⚠️  Erreurs (voir log)"
+  fi
+}
+
+rclone_sync() {
+  local label="$1"
+  shift
+  log "  $label"
+  
+  # L'explication des options magiques :
+  # -P : Ta barre de progression en direct
+  # --disable-http2 : Règle le bug de freeze réseau très connu avec OneDrive
+  # --timeout 5m : Si Microsoft fait le mort à la fin, on force la fermeture
+  # --fast-list : Accélère massivement la lecture/suppression des 9000 fichiers
+  
+  if rclone sync "$@" -P --log-file="$LOG_FILE" --log-level=INFO --disable-http2 --timeout 5m --fast-list; then
     log "  ✅ OK"
   else
     log "  ⚠️  Erreurs (voir log)"
@@ -68,7 +57,7 @@ run "nvim" "${RSYNC_CMD[@]}" ~/.config/nvim "$BACKUP_DIR/Configs_App/"
 run "kitty" "${RSYNC_CMD[@]}" ~/.config/kitty "$BACKUP_DIR/Configs_App/"
 run "lsd" "${RSYNC_CMD[@]}" ~/.config/lsd "$BACKUP_DIR/Configs_App/" || true
 run "mpv" "${RSYNC_CMD[@]}" ~/.config/mpv "$BACKUP_DIR/Configs_App/" || true
-run "starship" "${RSYNC_CMD[@]}" ~/.config/starship.toml "$BACKUP_DIR/Configs_App/" || true
+
 
 log ""
 log "🔧 Scripts et raccourcis..."
@@ -90,14 +79,62 @@ run "fstab" sudo "${RSYNC_CMD[@]}" /etc/fstab "$BACKUP_DIR/Services_Systemd/"
 sudo chown "$USER:$USER" "$BACKUP_DIR/Services_Systemd/fstab" 2>/dev/null || true
 
 log ""
-log "🦊 Firefox..."
-run "firefox profiles.ini" "${RSYNC_CMD[@]}" ~/.config/mozilla/firefox/profiles.ini ~/.config/mozilla/firefox/installs.ini "$BACKUP_DIR/Profils_Lourds/firefox/"
-run "firefox profil actif" "${RSYNC_FIREFOX[@]}" ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176 "$BACKUP_DIR/Profils_Lourds/firefox/"
+log "🦊 Firefox (Force Copy)..."
+
+# 1. Les fichiers de configuration de base
+run "firefox profiles.ini" "${RSYNC_CMD[@]}" \
+  ~/.config/mozilla/firefox/profiles.ini \
+  ~/.config/mozilla/firefox/installs.ini \
+  "$BACKUP_DIR/Profils_Lourds/firefox/"
+
+# 2. Le profil actif avec TOUTES tes exclusions
+run "firefox profil actif" "${RSYNC_CMD[@]}" \
+  --exclude="cache2/" \
+  --exclude="Cache/" \
+  --exclude="*.sqlite-wal" \
+  --exclude="*.sqlite-shm" \
+  --exclude="*.sqlite-journal" \
+  --exclude="minidumps/" \
+  --exclude="crashes/" \
+  --exclude="lock" \
+  --exclude=".parentlock" \
+  --exclude="thumbnails/" \
+  --exclude="sessionstore-backups/" \
+  --exclude="storage/default/*/cache/**" \
+  --exclude="SiteSecurityServiceState.bin" \
+  --exclude="AlternateServices.bin" \
+  ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176/ \
+  "$BACKUP_DIR/Profils_Lourds/firefox/d91w3rmx.default-release-1739246972176/"
 
 log ""
 log "📧 Thunderbird..."
-run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" ~/.thunderbird/profiles.ini ~/.thunderbird/installs.ini "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
-run "thunderbird profil actif" "${RSYNC_THUNDERBIRD[@]}" ~/.thunderbird/o2dmdq0v.default-release "$BACKUP_DIR/Profils_Lourds/thunderbird/"
+if pgrep -x thunderbird >/dev/null; then
+  log "  ⚠️  Thunderbird est ouvert — sauvegarde ignorée"
+else
+  run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" \
+    ~/.thunderbird/profiles.ini \
+    ~/.thunderbird/installs.ini \
+    "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
+    
+  run "thunderbird profil actif" "${RSYNC_CMD[@]}" \
+    --exclude="cache/" \
+    --exclude="Cache/" \
+    --exclude="lock" \
+    --exclude="parent.lock" \
+    --exclude="*.sqlite-wal" \
+    --exclude="*.sqlite-shm" \
+    --exclude="shader-cache/" \
+    --exclude="datareporting/" \
+    --exclude="saved-telemetry-pings/" \
+    --exclude="crashes/" \
+    --exclude="minidumps/" \
+    --exclude="scheduled-notifications/" \
+    --exclude="session.json" \
+    --exclude="session.json.backup" \
+    --exclude="ImapMail/**" \
+    ~/.thunderbird/o2dmdq0v.default-release/ \
+    "$BACKUP_DIR/Profils_Lourds/thunderbird/o2dmdq0v.default-release/"
+fi
 
 log ""
 log "📚 LibreOffice et Calibre..."
