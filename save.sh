@@ -5,7 +5,6 @@ LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
 RSYNC_CMD=(rsync -auL --delete --info=progress2)
 
-
 log() {
   printf "%s\n" "$1" | tee -a "$LOG_FILE"
 }
@@ -14,153 +13,71 @@ run() {
   local label="$1"
   shift
   log "  $label"
-  # On utilise 'tee' pour voir l'action en direct dans le terminal tout en gardant le log
-  if "$@" 2>&1 | tee -a "$LOG_FILE"; then
-    log "  ✅ OK"
-  else
+  if "$@" 2>&1 | tee -a "$LOG_FILE" | grep -q "rsync error"; then
     log "  ⚠️  Erreurs (voir log)"
+  else
+    log "  ✅ OK"
   fi
 }
 
-rclone_sync() {
-  local label="$1"
-  shift
-  log "  $label"
-  
-  # L'explication des options magiques :
-  # -P : Ta barre de progression en direct
-  # --disable-http2 : Règle le bug de freeze réseau très connu avec OneDrive
-  # --timeout 5m : Si Microsoft fait le mort à la fin, on force la fermeture
-  # --fast-list : Accélère massivement la lecture/suppression des 9000 fichiers
-  
-  if rclone sync "$@" -P --log-file="$LOG_FILE" --log-level=INFO --disable-http2 --timeout 5m --fast-list; then
-    log "  ✅ OK"
-  else
-    log "  ⚠️  Erreurs (voir log)"
-  fi
-}
-
-mkdir -p "$BACKUP_DIR"/{Dotfiles,Configs_App,Scripts_et_Raccourcis,Services_Systemd/User,Services_Systemd/System,Profils_Lourds,Secrets,Sigil,GJS_OSK,Machines_Virtuelles}
+mkdir -p "$BACKUP_DIR"/{Scripts_et_Raccourcis,Services_Systemd/User,Services_Systemd/System,Profils_Lourds,Sigil,GJS_OSK,Machines_Virtuelles}
 
 log "======================================"
-log "🚀 Démarrage : $(date '+%d/%m/%Y %H:%M:%S')"
+log "🚀 Démarrage de la sauvegarde : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
 
+# ─── 1. GitHub (Dotfiles Automatiques) ──────────────────────────────────────────
 log ""
-log "📄 Dotfiles..."
-run ".zshrc / .p10k.zsh / .gitconfig" "${RSYNC_CMD[@]}" ~/.zshrc ~/.p10k.zsh ~/.gitconfig "$BACKUP_DIR/Dotfiles/"
-run ".tmux.conf" "${RSYNC_CMD[@]}" --exclude='.tmux/plugins/' ~/.tmux.conf "$BACKUP_DIR/Dotfiles/"
+log "🐙 Sauvegarde GitHub des Dotfiles..."
+if git -C "$HOME/.dotfiles" diff --quiet && git -C "$HOME/.dotfiles" diff --cached --quiet; then
+  log "  ✅ Aucun changement détecté"
+else
+  git -C "$HOME/.dotfiles" add .
+  git -C "$HOME/.dotfiles" commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null
+  git -C "$HOME/.dotfiles" push -q origin main
+  log "  ✅ Changements pushés sur GitHub"
+fi
 
+# ─── 2. Bitwarden (Les Secrets) ────────────────────────────────────────────────
 log ""
-log "⚙️  Configs App..."
-run "nvim" "${RSYNC_CMD[@]}" ~/.config/nvim "$BACKUP_DIR/Configs_App/"
-run "kitty" "${RSYNC_CMD[@]}" ~/.config/kitty "$BACKUP_DIR/Configs_App/"
-run "lsd" "${RSYNC_CMD[@]}" ~/.config/lsd "$BACKUP_DIR/Configs_App/" || true
-run "mpv" "${RSYNC_CMD[@]}" ~/.config/mpv "$BACKUP_DIR/Configs_App/" || true
+# Appelle ton script Bitwarden pour mettre à jour les notes
+bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
 
-
+# ─── 3. OneDrive (La Volumétrie) ───────────────────────────────────────────────
 log ""
-log "🔧 Scripts et raccourcis..."
+log "☁️  Sauvegarde OneDrive (Scripts & Raccourcis)..."
 run "$HOME/.local/bin" "${RSYNC_CMD[@]}" ~/.local/bin/ "$BACKUP_DIR/Scripts_et_Raccourcis/bin/"
 run "$HOME/.local/share/applications" "${RSYNC_CMD[@]}" ~/.local/share/applications/ "$BACKUP_DIR/Scripts_et_Raccourcis/applications/"
 
 log ""
-log "🔄 Services Systemd utilisateur..."
+log "🔄 Services Systemd..."
 run "systemd/user" "${RSYNC_CMD[@]}" ~/.config/systemd/user/ "$BACKUP_DIR/Services_Systemd/User/"
-
-log ""
-log "🔄 Services Systemd système (mounts SSHFS)..."
 run "systemd/system *.mount" sudo "${RSYNC_CMD[@]}" /etc/systemd/system/*.mount "$BACKUP_DIR/Services_Systemd/System/"
 sudo chown -R "$USER:$USER" "$BACKUP_DIR/Services_Systemd/System/" 2>/dev/null || true
 
 log ""
-log "💾 fstab (disques NTFS, samba, btrfs)..."
-run "fstab" sudo "${RSYNC_CMD[@]}" /etc/fstab "$BACKUP_DIR/Services_Systemd/"
-sudo chown "$USER:$USER" "$BACKUP_DIR/Services_Systemd/fstab" 2>/dev/null || true
-
-log ""
-log "🦊 Firefox (Force Copy)..."
-
-# 1. Les fichiers de configuration de base
-run "firefox profiles.ini" "${RSYNC_CMD[@]}" \
-  ~/.config/mozilla/firefox/profiles.ini \
-  ~/.config/mozilla/firefox/installs.ini \
-  "$BACKUP_DIR/Profils_Lourds/firefox/"
-
-# 2. Le profil actif avec TOUTES tes exclusions
+log "🦊 Firefox..."
+run "firefox profiles.ini" "${RSYNC_CMD[@]}" ~/.config/mozilla/firefox/profiles.ini ~/.config/mozilla/firefox/installs.ini "$BACKUP_DIR/Profils_Lourds/firefox/"
 run "firefox profil actif" "${RSYNC_CMD[@]}" \
-  --exclude="cache2/" \
-  --exclude="Cache/" \
-  --exclude="*.sqlite-wal" \
-  --exclude="*.sqlite-shm" \
-  --exclude="*.sqlite-journal" \
-  --exclude="minidumps/" \
-  --exclude="crashes/" \
-  --exclude="lock" \
-  --exclude=".parentlock" \
-  --exclude="thumbnails/" \
-  --exclude="sessionstore-backups/" \
-  --exclude="storage/default/*/cache/**" \
-  --exclude="SiteSecurityServiceState.bin" \
-  --exclude="AlternateServices.bin" \
-  ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176/ \
-  "$BACKUP_DIR/Profils_Lourds/firefox/d91w3rmx.default-release-1739246972176/"
+  --exclude="cache2/" --exclude="Cache/" --exclude="*.sqlite-wal" --exclude="*.sqlite-shm" \
+  --exclude="thumbnails/" --exclude="sessionstore-backups/" \
+  ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176/ "$BACKUP_DIR/Profils_Lourds/firefox/d91w3rmx.default-release-1739246972176/"
 
 log ""
 log "📧 Thunderbird..."
-if pgrep -x thunderbird >/dev/null; then
-  log "  ⚠️  Thunderbird est ouvert — sauvegarde ignorée"
-else
-  run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" \
-    ~/.thunderbird/profiles.ini \
-    ~/.thunderbird/installs.ini \
-    "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
-    
-  run "thunderbird profil actif" "${RSYNC_CMD[@]}" \
-    --exclude="cache/" \
-    --exclude="Cache/" \
-    --exclude="lock" \
-    --exclude="parent.lock" \
-    --exclude="*.sqlite-wal" \
-    --exclude="*.sqlite-shm" \
-    --exclude="shader-cache/" \
-    --exclude="datareporting/" \
-    --exclude="saved-telemetry-pings/" \
-    --exclude="crashes/" \
-    --exclude="minidumps/" \
-    --exclude="scheduled-notifications/" \
-    --exclude="session.json" \
-    --exclude="session.json.backup" \
-    --exclude="ImapMail/**" \
-    ~/.thunderbird/o2dmdq0v.default-release/ \
-    "$BACKUP_DIR/Profils_Lourds/thunderbird/o2dmdq0v.default-release/"
-fi
+run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" ~/.thunderbird/profiles.ini ~/.thunderbird/installs.ini "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
+run "thunderbird profil actif" "${RSYNC_CMD[@]}" \
+  --exclude="cache/" --exclude="Cache/" --exclude="*.sqlite-wal" --exclude="*.sqlite-shm" \
+  --exclude="ImapMail/**" \
+  ~/.thunderbird/o2dmdq0v.default-release/ "$BACKUP_DIR/Profils_Lourds/thunderbird/o2dmdq0v.default-release/"
 
 log ""
-log "📚 LibreOffice et Calibre..."
+log "📚 Autres apps (LibreOffice, Calibre, Sigil, GJS OSK)..."
 run "libreoffice" "${RSYNC_CMD[@]}" --exclude='4/cache/' ~/.config/libreoffice "$BACKUP_DIR/Profils_Lourds/"
 run "calibre" "${RSYNC_CMD[@]}" --exclude='caches/' ~/.config/calibre "$BACKUP_DIR/Profils_Lourds/" || true
-
-log ""
-log "📖 Sigil..."
-run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Inspector-Cache/' --exclude='Preview-Cache/' --exclude='local-devtools/' --exclude='local-storage/' --exclude='workspace/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
-
-log ""
-log "⌨️  GJS OSK..."
-run "gnome extensions" "${RSYNC_CMD[@]}" ~/.local/share/gnome-shell/extensions/ "$BACKUP_DIR/GJS_OSK/" || true
+run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Preview-Cache/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
+run "gjs osk" "${RSYNC_CMD[@]}" ~/.local/share/gnome-shell/extensions/ "$BACKUP_DIR/GJS_OSK/" || true
 dconf dump /org/gnome/shell/extensions/gjsosk/ >"$BACKUP_DIR/GJS_OSK/gjsosk_settings.ini" 2>/dev/null || true
-
-log ""
-log "🔐 Secrets..."
-run ".ssh" "${RSYNC_CMD[@]}" ~/.ssh "$BACKUP_DIR/Secrets/"
-run "rclone.conf" "${RSYNC_CMD[@]}" ~/.config/rclone/rclone.conf "$BACKUP_DIR/Secrets/"
-run "samba credentials" sudo "${RSYNC_CMD[@]}" /etc/samba/.credentials "$BACKUP_DIR/Secrets/"
-sudo chown -R "$USER:$USER" "$BACKUP_DIR/Secrets/" 2>/dev/null || true
-
-log ""
-log "🖱️  Bluetooth..."
-run "bluetooth" sudo "${RSYNC_CMD[@]}" /var/lib/bluetooth/ "$BACKUP_DIR/Secrets/bluetooth/"
-sudo chown -R "$USER:$USER" "$BACKUP_DIR/Secrets/bluetooth/" 2>/dev/null || true
 
 log ""
 log "🖥️  Machine Virtuelle win11..."
@@ -178,6 +95,7 @@ fi
 
 log ""
 log "======================================"
-log "✅ Sauvegarde terminée : $(date '+%d/%m/%Y %H:%M:%S')"
+log "✅ Toutes les sauvegardes (Git, BW, OneDrive) sont terminées !"
 log "📋 Log : $LOG_FILE"
 log "======================================"
+
