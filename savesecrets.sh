@@ -23,62 +23,71 @@ if [[ "$BW_STATUS" == "locked" ]]; then
 fi
 
 if [[ -z "$BW_SESSION" ]]; then
-  echo "❌ Échec du déverrouillage."
+  echo "❌ Échec du déverrouillage (mot de passe incorrect)."
   exit 1
 fi
+echo "  ✅ Mot de passe correct, vault déverrouillé."
 bw sync >/dev/null
 
-# --- FONCTION MAGIQUE : CREATE OU UPDATE ---
-upsert_note() {
+# --- FONCTION : CLÉ SSH NATIVE (TYPE 5) ---
+sync_ssh() {
   local name="$1"
-  local content="$2"
-
-  # Cherche si une note avec ce nom exact existe déjà
+  echo "  🔍 Vérification de l'existence de '$name' sur Bitwarden..."
   local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
 
-  if [[ -z "$item_id" ]]; then
-    # CRÉATION
-    local json=$(bw get template item | jq --arg notes "$content" --arg name "$name" \
-      '.type = 2 | .name = $name | .secureNote = {"type": 0} | .notes = $notes')
-    echo "$json" | bw encode | bw create item >/dev/null
-    echo "  ✅ Créé : $name"
+  if [[ -n "$item_id" ]]; then
+    echo "  ⏭️  '$name' existe déjà. (Ignoré pour gagner du temps)"
   else
-    # MISE À JOUR
-    local json=$(bw get item "$item_id" | jq --arg notes "$content" '.notes = $notes')
-    echo "$json" | bw encode | bw edit item "$item_id" >/dev/null
-    echo "  🔄 Mis à jour : $name"
+    echo "  ➕ Création de '$name' (Format Clé SSH natif)..."
+    local priv=$(base64 -w 0 ~/.ssh/id_rsa)
+    local pub=$(cat ~/.ssh/id_rsa.pub)
+
+    local json=$(bw get template item | jq --arg priv "$priv" --arg pub "$pub" --arg name "$name" \
+      '.type = 5 | .name = $name | .sshKey = {"privateKey": $priv, "publicKey": $pub}')
+    echo "$json" | bw encode | bw create item >/dev/null
+    echo "  ✅ Créé avec succès : $name"
   fi
 }
 
-# 2. Sauvegarde des Clés SSH
+# --- FONCTION : NOTE SÉCURISÉE (TYPE 2) ---
+sync_note() {
+  local name="$1"
+  local content="$2"
+  echo "  🔍 Vérification de l'existence de '$name' sur Bitwarden..."
+  local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
+
+  if [[ -n "$item_id" ]]; then
+    echo "  ⏭️  '$name' existe déjà. (Ignoré pour gagner du temps)"
+  else
+    echo "  ➕ Création de '$name'..."
+    local json=$(bw get template item | jq --arg notes "$content" --arg name "$name" \
+      '.type = 2 | .name = $name | .secureNote = {"type": 0} | .notes = $notes')
+    echo "$json" | bw encode | bw create item >/dev/null
+    echo "  ✅ Créé avec succès : $name"
+  fi
+}
+
+# 2. Synchronisation
 if [[ -f ~/.ssh/id_rsa ]] && [[ -f ~/.ssh/id_rsa.pub ]]; then
-  PRIV=$(base64 -w 0 ~/.ssh/id_rsa)
-  PUB=$(cat ~/.ssh/id_rsa.pub)
-  SSH_CONTENT="PRIVATE_KEY_B64:
-$PRIV
-
-PUBLIC_KEY:
-$PUB"
-  upsert_note "SSH GitHub" "$SSH_CONTENT"
+  sync_ssh "SSH GitHub"
 fi
 
-# 3. Sauvegarde de rclone.conf
 if [[ -f ~/.config/rclone/rclone.conf ]]; then
-  upsert_note "Config Rclone" "$(cat ~/.config/rclone/rclone.conf)"
+  sync_note "Config Rclone" "$(cat ~/.config/rclone/rclone.conf)"
 fi
 
-# 4. Sauvegarde Samba Credentials
 if [[ -f /etc/samba/.credentials ]]; then
-  upsert_note "Samba Credentials" "$(sudo cat /etc/samba/.credentials)"
+  # Pré-cache sudo pour ne pas bloquer le script au milieu
+  sudo -v
+  sync_note "Samba Credentials" "$(sudo cat /etc/samba/.credentials)"
 fi
 
-# 5. Sauvegarde des lignes fstab (NTFS / Samba)
 FSTAB_CONTENT="UUID=REDACTED  /mnt/2TB  ntfs3  uid=1000,gid=1000,dmask=022,fmask=133,auto,nofail  0  0
 UUID=REDACTED  /mnt/1TB  ntfs3  uid=1000,gid=1000,dmask=022,fmask=133,auto,nofail  0  0
 //REDACTED/data /mnt/samba/data cifs credentials=/etc/samba/.credentials,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nobrl,noperm,noserverino,cache=none,iocharset=utf8,nofail 0 0"
 
-upsert_note "Fstab Mounts" "$FSTAB_CONTENT"
+sync_note "Fstab Mounts" "$FSTAB_CONTENT"
 
-# 6. Verrouillage
+# 3. Verrouillage
 bw lock >/dev/null
 echo "🔒 Vault reverrouillé."
