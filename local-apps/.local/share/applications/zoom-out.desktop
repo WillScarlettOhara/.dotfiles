@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zoom -
+Exec=/home/wills/.local/bin/zoom-out.sh
+Icon=zoom-out
+Type=Application
+Categories=Utility;

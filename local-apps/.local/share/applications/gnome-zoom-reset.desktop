@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zoom Reset (GNOME)
+Exec=/home/wills/.local/bin/gnome-zoom-reset.sh
+Icon=zoom-original
+Type=Application
+Categories=Utility;

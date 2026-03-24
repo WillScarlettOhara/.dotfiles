@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zoom Out (GNOME)
+Exec=/home/wills/.local/bin/gnome-zoom-out.sh
+Icon=zoom-out
+Type=Application
+Categories=Utility;

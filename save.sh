@@ -29,16 +29,20 @@ log "======================================"
 # ─── 1. GitHub (Dotfiles Automatiques) ──────────────────────────────────────────
 log ""
 log "🐙 Sauvegarde GitHub des Dotfiles..."
-if git -C "$HOME/.dotfiles" diff --quiet && git -C "$HOME/.dotfiles" diff --cached --quiet; then
+
+# On met à jour les fichiers "Système" et "Gnome" directement dans le repo avant le commit !
+sudo cp /etc/systemd/system/*.mount "$HOME/.dotfiles/system-mounts/" 2>/dev/null || true
+dconf dump /org/gnome/shell/extensions/gjsosk/ >"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
+
+if git -C "$HOME/.dotfiles" diff --quiet && git -C "$HOME/.dotfiles" diff --cached --quiet && git -C "$HOME/.dotfiles" ls-files --others --exclude-standard | grep -q '^'; then
   log "  ✅ Aucun changement détecté"
 else
   git -C "$HOME/.dotfiles" add .
   git -C "$HOME/.dotfiles" commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null
-  # CORRECTION : On push sur 'master' et pas sur 'main' !
   if git -C "$HOME/.dotfiles" push -q origin master; then
     log "  ✅ Changements pushés sur GitHub"
   else
-    log "  ⚠️  Erreur lors du push GitHub (Vérifiez votre connexion/dépôt)"
+    log "  ⚠️  Erreur lors du push GitHub"
   fi
 fi
 
@@ -117,12 +121,10 @@ else
 fi
 
 log ""
-log "📚 Autres apps (LibreOffice, Calibre, Sigil, GJS OSK)..."
+log "📚 Autres apps (LibreOffice, Calibre, Sigil)..."
 run "libreoffice" "${RSYNC_CMD[@]}" --exclude='4/cache/' ~/.config/libreoffice "$BACKUP_DIR/Profils_Lourds/"
 run "calibre" "${RSYNC_CMD[@]}" --exclude='caches/' ~/.config/calibre "$BACKUP_DIR/Profils_Lourds/" || true
 run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Preview-Cache/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
-run "gjs osk" "${RSYNC_CMD[@]}" ~/.local/share/gnome-shell/extensions/ "$BACKUP_DIR/GJS_OSK/" || true
-dconf dump /org/gnome/shell/extensions/gjsosk/ >"$BACKUP_DIR/GJS_OSK/gjsosk_settings.ini" 2>/dev/null || true
 
 log ""
 log "🖥️  Machine Virtuelle win11..."

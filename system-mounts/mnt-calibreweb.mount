@@ -1,0 +1,13 @@
+[Unit]
+Description=SSHFS mount calibre-web (REDACTED)
+After=network-online.target
+Wants=network-online.target
+
+[Mount]
+What=will@REDACTED:/home/will
+Where=/mnt/calibreweb
+Type=fuse.sshfs
+Options=allow_other,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,IdentityFile=/home/wills/.ssh/id_rsa
+
+[Install]
+WantedBy=multi-user.target

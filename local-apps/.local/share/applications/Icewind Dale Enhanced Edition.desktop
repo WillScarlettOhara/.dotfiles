@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Icewind Dale: Enhanced Edition
+Comment=Play this game on Steam
+Exec=steam steam://rungameid/321800
+Icon=steam_icon_321800
+Terminal=false
+Type=Application
+Categories=Game;

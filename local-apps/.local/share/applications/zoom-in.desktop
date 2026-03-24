@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zoom +
+Exec=/home/wills/.local/bin/zoom-in.sh
+Icon=zoom-in
+Type=Application
+Categories=Utility;

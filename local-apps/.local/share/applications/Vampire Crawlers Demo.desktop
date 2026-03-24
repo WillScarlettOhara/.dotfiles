@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Vampire Crawlers Demo
+Comment=Play this game on Steam
+Exec=steam steam://rungameid/4329470
+Icon=steam_icon_4329470
+Terminal=false
+Type=Application
+Categories=Game;

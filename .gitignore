@@ -1,2 +1,6 @@
 /mpv/.config/mpv/last_played.txt
 /mpv/.config/mpv/folder_prefs.json
+*.cache
+local-apps/.local/share/applications/wine*
+local-apps/.local/share/applications/mimeinfo.cache
+local-bin/.local/bin/bw

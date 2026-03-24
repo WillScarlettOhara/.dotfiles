@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zoom In (GNOME)
+Exec=/home/wills/.local/bin/gnome-zoom-in.sh
+Icon=zoom-in
+Type=Application
+Categories=Utility;
