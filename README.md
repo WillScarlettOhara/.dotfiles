@@ -3,6 +3,7 @@
 Ce guide explique comment restaurer les fichiers sauvegardés sur OneDrive vers une nouvelle installation Linux.
 
 > **⚠️ Prérequis :**
+>
 > - Assurez-vous que OneDrive est synchronisé ou monté (ex: via Rclone) au chemin `$HOME/OneDrive/`.
 > - Fermez les applications concernées (Firefox, Thunderbird, Neovim, etc.) avant de restaurer leurs configurations.
 > - La commande `rsync` est recommandée pour restaurer en toute sécurité.
@@ -19,6 +20,7 @@ BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
 
 Le script `bootstrap.sh` automatise les étapes 1 à 3 en une seule commande.
 Il récupère les clés SSH depuis Bitwarden, clone les dotfiles GitHub et applique stow.
+Il configure également les known_hosts pour GitHub et les serveurs locaux (REDACTED, REDACTED).
 
 ```bash
 bash bootstrap.sh
@@ -31,10 +33,13 @@ bash bootstrap.sh
 1. Créer un **Nouvel élément** → type **Note sécurisée**
 2. Nom : `SSH GitHub`
 3. Dans **Notes**, coller le résultat de :
+
 ```bash
 cat ~/.ssh/id_rsa | base64 -w 0
 ```
+
 4. Ajouter un **Champ personnalisé** nommé `PUBLIC_KEY` avec le résultat de :
+
 ```bash
 cat ~/.ssh/id_rsa.pub
 ```
@@ -204,11 +209,61 @@ sudo systemctl restart bluetooth
 
 ## 9. 🔄 Services Systemd
 
+### Utilisateur (rclone, etc.)
+
 ```bash
 mkdir -p ~/.config/systemd/user/
 rsync -auv "$BACKUP_DIR/Services_Systemd/User/" ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now rclone-onedrive.service
+```
+
+### Système — fstab (disques NTFS 1TB/2TB + Samba)
+
+```bash
+# Créer les points de montage
+sudo mkdir -p /mnt/1TB /mnt/2TB /mnt/samba/data
+
+# Restaurer le fstab
+sudo cp "$BACKUP_DIR/Services_Systemd/fstab" /etc/fstab
+
+# Restaurer les credentials Samba
+sudo mkdir -p /etc/samba
+sudo cp "$BACKUP_DIR/Secrets/.credentials" /etc/samba/.credentials
+sudo chmod 600 /etc/samba/.credentials
+
+# Recharger et monter
+sudo systemctl daemon-reload
+sudo mount /mnt/1TB
+sudo mount /mnt/2TB
+sudo mount /mnt/samba/data
+```
+
+### Système — mounts SSHFS (calibreweb, torrent)
+
+```bash
+# Installer sshfs
+sudo pacman -S sshfs  # ou apt install sshfs
+
+# Créer les points de montage
+sudo mkdir -p /mnt/calibreweb /mnt/torrent
+sudo chown wills:wills /mnt/calibreweb /mnt/torrent
+
+# Restaurer les unit files
+sudo cp "$BACKUP_DIR/Services_Systemd/System/"*.mount /etc/systemd/system/
+
+# Copier la clé SSH pour root (nécessaire pour les mounts au boot)
+sudo mkdir -p /root/.ssh
+sudo ssh-keyscan REDACTED | sudo tee -a /root/.ssh/known_hosts
+sudo ssh-keyscan REDACTED | sudo tee -a /root/.ssh/known_hosts
+
+# Activer et démarrer
+sudo systemctl daemon-reload
+sudo systemctl enable --now mnt-calibreweb.mount
+sudo systemctl enable --now mnt-torrent.mount
+
+# Vérifier
+systemctl status mnt-calibreweb.mount mnt-torrent.mount
 ```
 
 ---
@@ -254,8 +309,10 @@ sudo virsh list --all
 4. Monter OneDrive : `systemctl --user start rclone-onedrive.service`
 5. Restaurer Rclone config
 6. Restaurer Bluetooth
-7. Restaurer les services Systemd
-8. Restaurer les profils lourds
-9. Restaurer Sigil
-10. Restaurer la VM
-11. Installer les packages : `paru -S - < ~/.dotfiles/pkglist.txt`
+7. Restaurer les services Systemd utilisateur
+8. Restaurer fstab (1TB, 2TB, Samba) + credentials Samba
+9. Restaurer les mounts SSHFS (calibreweb, torrent)
+10. Restaurer les profils lourds
+11. Restaurer Sigil
+12. Restaurer la VM
+13. Installer les packages : `paru -S - < ~/.dotfiles/pkglist.txt`
