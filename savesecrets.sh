@@ -8,15 +8,17 @@ echo "======================================"
 # 1. Vérification et Déverrouillage
 BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
 if [[ "$BW_STATUS" == "unauthenticated" ]]; then
-  echo "🔑 Connexion à Bitwarden..."
-  bw login
+  echo "🔑 Connexion à Bitwarden..." >/dev/tty
+  bw login </dev/tty
   BW_STATUS=$(bw status | jq -r '.status')
 fi
 
 if [[ "$BW_STATUS" == "locked" ]]; then
-  echo -n "🔓 Vault verrouillé. Entrez votre mot de passe maître : "
-  read -s -r BW_PASS
-  echo ""
+  # On force l'affichage et la lecture directement sur le terminal (bypass du pipe 'tee')
+  echo -n "🔓 Vault verrouillé. Entrez votre mot de passe maître : " >/dev/tty
+  read -s -r BW_PASS </dev/tty
+  echo "" >/dev/tty
+
   export BW_PASS
   export BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
   unset BW_PASS
@@ -77,8 +79,8 @@ if [[ -f ~/.config/rclone/rclone.conf ]]; then
 fi
 
 if [[ -f /etc/samba/.credentials ]]; then
-  # Pré-cache sudo pour ne pas bloquer le script au milieu
-  sudo -v
+  # On demande sudo sur le vrai terminal si nécessaire
+  sudo -v </dev/tty >/dev/tty 2>&1
   sync_note "Samba Credentials" "$(sudo cat /etc/samba/.credentials)"
 fi
 
