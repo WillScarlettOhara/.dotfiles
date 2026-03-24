@@ -14,11 +14,9 @@ if [[ "$BW_STATUS" == "unauthenticated" ]]; then
 fi
 
 if [[ "$BW_STATUS" == "locked" ]]; then
-  # On force l'affichage et la lecture directement sur le terminal (bypass du pipe 'tee')
   echo -n "🔓 Vault verrouillé. Entrez votre mot de passe maître : " >/dev/tty
   read -s -r BW_PASS </dev/tty
   echo "" >/dev/tty
-
   export BW_PASS
   export BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
   unset BW_PASS
@@ -38,14 +36,17 @@ sync_ssh() {
   local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
 
   if [[ -n "$item_id" ]]; then
-    echo "  ⏭️  '$name' existe déjà. (Ignoré pour gagner du temps)"
+    echo "  ⏭️  '$name' existe déjà. (Ignoré)"
   else
     echo "  ➕ Création de '$name' (Format Clé SSH natif)..."
-    local priv=$(base64 -w 0 ~/.ssh/id_rsa)
+    # Lecture en texte brut (pas de base64 nécessaire pour le type natif)
+    local priv=$(cat ~/.ssh/id_rsa)
     local pub=$(cat ~/.ssh/id_rsa.pub)
+    # Calcul de l'empreinte exigée par Bitwarden
+    local fp=$(ssh-keygen -lf ~/.ssh/id_rsa.pub | awk '{print $2}')
 
-    local json=$(bw get template item | jq --arg priv "$priv" --arg pub "$pub" --arg name "$name" \
-      '.type = 5 | .name = $name | .sshKey = {"privateKey": $priv, "publicKey": $pub}')
+    local json=$(bw get template item | jq --arg priv "$priv" --arg pub "$pub" --arg fp "$fp" --arg name "$name" \
+      '.type = 5 | .name = $name | .sshKey = {"privateKey": $priv, "publicKey": $pub, "keyFingerprint": $fp}')
     echo "$json" | bw encode | bw create item >/dev/null
     echo "  ✅ Créé avec succès : $name"
   fi
@@ -59,7 +60,7 @@ sync_note() {
   local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
 
   if [[ -n "$item_id" ]]; then
-    echo "  ⏭️  '$name' existe déjà. (Ignoré pour gagner du temps)"
+    echo "  ⏭️  '$name' existe déjà. (Ignoré)"
   else
     echo "  ➕ Création de '$name'..."
     local json=$(bw get template item | jq --arg notes "$content" --arg name "$name" \
@@ -79,7 +80,6 @@ if [[ -f ~/.config/rclone/rclone.conf ]]; then
 fi
 
 if [[ -f /etc/samba/.credentials ]]; then
-  # On demande sudo sur le vrai terminal si nécessaire
   sudo -v </dev/tty >/dev/tty 2>&1
   sync_note "Samba Credentials" "$(sudo cat /etc/samba/.credentials)"
 fi
@@ -87,7 +87,6 @@ fi
 FSTAB_CONTENT="UUID=REDACTED  /mnt/2TB  ntfs3  uid=1000,gid=1000,dmask=022,fmask=133,auto,nofail  0  0
 UUID=REDACTED  /mnt/1TB  ntfs3  uid=1000,gid=1000,dmask=022,fmask=133,auto,nofail  0  0
 //REDACTED/data /mnt/samba/data cifs credentials=/etc/samba/.credentials,uid=1000,gid=1000,file_mode=0777,dir_mode=0777,nobrl,noperm,noserverino,cache=none,iocharset=utf8,nofail 0 0"
-
 sync_note "Fstab Mounts" "$FSTAB_CONTENT"
 
 # 3. Verrouillage

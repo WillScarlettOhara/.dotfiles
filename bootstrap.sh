@@ -3,10 +3,8 @@
 # Résout le problème : besoin SSH pour GitHub, besoin GitHub pour les dotfiles
 #
 # Prérequis :
-#   - Avoir stocké les clés SSH dans Bitwarden (interface web vault.bitwarden.com)
-#     sous le nom "SSH GitHub" en Secure Note avec :
-#       - Notes : contenu de `cat ~/.ssh/id_rsa | base64 -w 0`
-#       - Champ personnalisé "PUBLIC_KEY" : contenu de `cat ~/.ssh/id_rsa.pub`
+#   - Avoir un item de type "Clé SSH" (Type 5) dans Bitwarden
+#   - Nommé "SSH GitHub", avec les champs "Clé Privée" et "Clé Publique" remplis.
 
 set -e
 export NODE_NO_WARNINGS=1
@@ -18,7 +16,7 @@ echo "======================================"
 # ─── 1. Dépendances minimales ───────────────────────────────────────────────
 echo ""
 echo "📦 Installation des dépendances..."
-sudo pacman -S --noconfirm jq stow git openssh sshfs unzip wget 2>/dev/null || \
+sudo pacman -S --noconfirm jq stow git openssh sshfs unzip wget 2>/dev/null ||
   sudo apt install -y jq stow git openssh-client sshfs unzip wget 2>/dev/null || true
 
 # ─── 2. Bitwarden CLI ───────────────────────────────────────────────────────
@@ -38,8 +36,6 @@ fi
 # ─── 3. Login + unlock Bitwarden ────────────────────────────────────────────
 echo ""
 echo "🔑 Connexion à Bitwarden..."
-echo "  (Entrez votre email et mot de passe maître)"
-
 BW_STATUS=$(bw status | jq -r '.status')
 
 if [[ "$BW_STATUS" == "unauthenticated" ]]; then
@@ -74,19 +70,19 @@ chmod 700 ~/.ssh
 
 ITEM_NAME="SSH GitHub"
 
-# Clé privée stockée en base64 dans les notes
-PRIVATE_KEY_B64=$(bw get item "$ITEM_NAME" | jq -r '.notes // empty')
+# Extraction native (plus besoin de base64)
+PRIVATE_KEY=$(bw get item "$ITEM_NAME" | jq -r '.sshKey.privateKey // empty')
 
-if [[ -z "$PRIVATE_KEY_B64" ]]; then
+if [[ -z "$PRIVATE_KEY" ]]; then
   echo "  ⚠️  Item '$ITEM_NAME' introuvable. Items disponibles :"
   bw list items | jq -r '.[].name'
   echo ""
   read -rp "  Entrez le nom exact de l'item SSH : " ITEM_NAME </dev/tty
-  PRIVATE_KEY_B64=$(bw get item "$ITEM_NAME" | jq -r '.notes // empty')
+  PRIVATE_KEY=$(bw get item "$ITEM_NAME" | jq -r '.sshKey.privateKey // empty')
 fi
 
-if [[ -n "$PRIVATE_KEY_B64" ]]; then
-  echo "$PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_rsa
+if [[ -n "$PRIVATE_KEY" ]]; then
+  echo "$PRIVATE_KEY" >~/.ssh/id_rsa
   chmod 600 ~/.ssh/id_rsa
   echo "  ✅ Clé privée restaurée dans ~/.ssh/id_rsa"
 else
@@ -94,10 +90,10 @@ else
   exit 1
 fi
 
-# Clé publique stockée dans un champ personnalisé
-PUBLIC_KEY=$(bw get item "$ITEM_NAME" | jq -r '.fields[] | select(.name == "PUBLIC_KEY") | .value // empty')
+# Extraction de la clé publique native
+PUBLIC_KEY=$(bw get item "$ITEM_NAME" | jq -r '.sshKey.publicKey // empty')
 if [[ -n "$PUBLIC_KEY" ]]; then
-  echo "$PUBLIC_KEY" > ~/.ssh/id_rsa.pub
+  echo "$PUBLIC_KEY" >~/.ssh/id_rsa.pub
   chmod 644 ~/.ssh/id_rsa.pub
   echo "  ✅ Clé publique restaurée dans ~/.ssh/id_rsa.pub"
 fi
@@ -105,13 +101,12 @@ fi
 # Ajoute GitHub et les serveurs locaux aux known_hosts
 echo ""
 echo "  Ajout des known_hosts (GitHub + serveurs locaux)..."
-ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-ssh-keyscan REDACTED >> ~/.ssh/known_hosts 2>/dev/null
-ssh-keyscan REDACTED >> ~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan REDACTED >>~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan REDACTED >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 echo "  ✅ known_hosts mis à jour"
 
-# Copier les known_hosts pour root (nécessaire pour les mounts systemd)
 sudo mkdir -p /root/.ssh
 sudo sh -c "ssh-keyscan REDACTED >> /root/.ssh/known_hosts 2>/dev/null"
 sudo sh -c "ssh-keyscan REDACTED >> /root/.ssh/known_hosts 2>/dev/null"
@@ -140,7 +135,7 @@ fi
 echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-stow --adopt zsh tmux git nvim kitty mpv lsd 2>/dev/null || \
+stow --adopt zsh tmux git nvim kitty mpv lsd 2>/dev/null ||
   stow zsh tmux git nvim kitty mpv lsd
 echo "  ✅ Dotfiles appliqués"
 
@@ -152,11 +147,5 @@ echo "  🔒 Vault Bitwarden verrouillé"
 echo ""
 echo "======================================"
 echo "✅ Bootstrap terminé !"
-echo ""
-echo "Prochaines étapes :"
-echo "  1. source ~/.zshrc"
-echo "  2. Monter OneDrive : systemctl --user start rclone-onedrive.service"
-echo "  3. Lancer le script de restauration OneDrive"
-echo "  4. Restaurer fstab + mounts systemd (voir guide de restauration)"
-echo "  5. Installer les packages : paru -S - < ~/.dotfiles/pkglist.txt"
 echo "======================================"
+
