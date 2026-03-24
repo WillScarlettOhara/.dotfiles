@@ -60,18 +60,22 @@ run "starship" "${RSYNC_CMD[@]}" ~/.config/starship.toml "$BACKUP_DIR/Configs_Ap
 
 log ""
 log "🔧 Scripts et raccourcis..."
-# SC2088 corrigé en remplaçant "~" par "$HOME" dans les guillemets
 run "$HOME/.local/bin" "${RSYNC_CMD[@]}" ~/.local/bin/ "$BACKUP_DIR/Scripts_et_Raccourcis/bin/"
 run "$HOME/.local/share/applications" "${RSYNC_CMD[@]}" ~/.local/share/applications/ "$BACKUP_DIR/Scripts_et_Raccourcis/applications/"
 
 log ""
-log "🔄 Services Systemd..."
+log "🔄 Services Systemd utilisateur..."
 run "systemd/user" "${RSYNC_CMD[@]}" ~/.config/systemd/user/ "$BACKUP_DIR/Services_Systemd/User/"
 
 log ""
-log "🔧 Services Systemd système..."
-run "systemd/system mounts" sudo "${RSYNC_CMD[@]}" /etc/systemd/system/*.mount "$BACKUP_DIR/Services_Systemd/System/"
+log "🔄 Services Systemd système (mounts SSHFS)..."
+run "systemd/system *.mount" sudo "${RSYNC_CMD[@]}" /etc/systemd/system/*.mount "$BACKUP_DIR/Services_Systemd/System/"
 sudo chown -R "$USER:$USER" "$BACKUP_DIR/Services_Systemd/System/" 2>/dev/null || true
+
+log ""
+log "💾 fstab (disques NTFS, samba, btrfs)..."
+run "fstab" sudo "${RSYNC_CMD[@]}" /etc/fstab "$BACKUP_DIR/Services_Systemd/"
+sudo chown "$USER:$USER" "$BACKUP_DIR/Services_Systemd/fstab" 2>/dev/null || true
 
 log ""
 log "🦊 Firefox..."
@@ -99,6 +103,8 @@ log ""
 log "🔐 Secrets..."
 run ".ssh" "${RSYNC_CMD[@]}" ~/.ssh "$BACKUP_DIR/Secrets/"
 run "rclone.conf" "${RSYNC_CMD[@]}" ~/.config/rclone/rclone.conf "$BACKUP_DIR/Secrets/"
+run "samba credentials" sudo "${RSYNC_CMD[@]}" /etc/samba/.credentials "$BACKUP_DIR/Secrets/"
+sudo chown -R "$USER:$USER" "$BACKUP_DIR/Secrets/" 2>/dev/null || true
 
 log ""
 log "🖱️  Bluetooth..."
@@ -111,7 +117,6 @@ NOM_VM="win11"
 sudo virsh dumpxml "$NOM_VM" | tee "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" >/dev/null
 log "  Copie du disque VM en cours..."
 
-# On demande poliment à shellcheck d'ignorer ce faux positif :
 # shellcheck disable=SC2024
 if sudo "${RSYNC_CMD[@]}" "/var/lib/libvirt/images/${NOM_VM}.qcow2" "$BACKUP_DIR/Machines_Virtuelles/" >>"$LOG_FILE" 2>&1; then
   sudo chown "$USER:$USER" "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2"
