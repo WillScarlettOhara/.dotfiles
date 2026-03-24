@@ -184,8 +184,18 @@ chmod +x ~/.local/bin/*
 > **Attention :** Ne lancez pas Firefox ni Thunderbird pendant cette opération.
 
 ```bash
-rsync -auv "$BACKUP_DIR/Profils_Lourds/.mozilla" ~/
-rsync -auv "$BACKUP_DIR/Profils_Lourds/.thunderbird" ~/
+# Firefox
+mkdir -p ~/.config/mozilla/firefox
+rsync -auv "$BACKUP_DIR/Profils_Lourds/firefox/profiles.ini" ~/.config/mozilla/firefox/
+rsync -auv "$BACKUP_DIR/Profils_Lourds/firefox/installs.ini" ~/.config/mozilla/firefox/
+rsync -auv "$BACKUP_DIR/Profils_Lourds/firefox/d91w3rmx.default-release-1739246972176" ~/.config/mozilla/firefox/
+
+# Thunderbird
+mkdir -p ~/.thunderbird
+rsync -auv "$BACKUP_DIR/Profils_Lourds/thunderbird/profiles.ini" ~/.thunderbird/
+rsync -auv "$BACKUP_DIR/Profils_Lourds/thunderbird/o2dmdq0v.default-release" ~/.thunderbird/
+
+# LibreOffice et Calibre
 rsync -auv "$BACKUP_DIR/Profils_Lourds/libreoffice" ~/.config/
 rsync -auv "$BACKUP_DIR/Profils_Lourds/calibre" ~/.config/
 ```

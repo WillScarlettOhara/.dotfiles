@@ -9,18 +9,30 @@ RSYNC_FIREFOX=(rsync -auL --delete --stats
   --exclude=Cache/
   --exclude='*.sqlite-wal'
   --exclude='*.sqlite-shm'
+  --exclude='*.sqlite-journal'
   --exclude=minidumps/
-  --exclude=crash-reports/
-  --exclude=thumbnails/)
+  --exclude=crashes/
+  --exclude='Crash Reports/'
+  --exclude='Pending Pings/'
+  --exclude=thumbnails/
+  --exclude=sessionstore-backups/
+  --exclude=SiteSecurityServiceState.bin
+  --exclude=AlternateServices.bin)
 RSYNC_THUNDERBIRD=(rsync -auL --delete --stats
   --exclude=cache/
   --exclude=Cache/
   --exclude=lock
+  --exclude=parent.lock
   --exclude='*.sqlite-wal'
   --exclude='*.sqlite-shm'
   --exclude=shader-cache/
   --exclude=datareporting/
   --exclude=saved-telemetry-pings/
+  --exclude=crashes/
+  --exclude=minidumps/
+  --exclude=scheduled-notifications/
+  --exclude=session.json
+  --exclude=session.json.backup
   --exclude='ImapMail/'
   --exclude='ImapMail/*/tmp/')
 
@@ -79,11 +91,13 @@ sudo chown "$USER:$USER" "$BACKUP_DIR/Services_Systemd/fstab" 2>/dev/null || tru
 
 log ""
 log "🦊 Firefox..."
-run ".mozilla" "${RSYNC_FIREFOX[@]}" ~/.mozilla "$BACKUP_DIR/Profils_Lourds/"
+run "firefox profiles.ini" "${RSYNC_CMD[@]}" ~/.config/mozilla/firefox/profiles.ini ~/.config/mozilla/firefox/installs.ini "$BACKUP_DIR/Profils_Lourds/firefox/"
+run "firefox profil actif" "${RSYNC_FIREFOX[@]}" ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176 "$BACKUP_DIR/Profils_Lourds/firefox/"
 
 log ""
 log "📧 Thunderbird..."
-run ".thunderbird" "${RSYNC_THUNDERBIRD[@]}" ~/.thunderbird "$BACKUP_DIR/Profils_Lourds/"
+run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" ~/.thunderbird/profiles.ini ~/.thunderbird/installs.ini "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
+run "thunderbird profil actif" "${RSYNC_THUNDERBIRD[@]}" ~/.thunderbird/o2dmdq0v.default-release "$BACKUP_DIR/Profils_Lourds/thunderbird/"
 
 log ""
 log "📚 LibreOffice et Calibre..."
