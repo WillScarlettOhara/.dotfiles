@@ -134,3 +134,4 @@ export LS_COLORS="\
 *.zip=38;5;175:\
 *.tar=38;5;175:\
 *.gz=38;5;175:"
+export PATH="$HOME/.local/bin:$PATH"

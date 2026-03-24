@@ -3,7 +3,6 @@
 Ce guide explique comment restaurer les fichiers sauvegardés sur OneDrive vers une nouvelle installation Linux.
 
 > **⚠️ Prérequis :**
->
 > - Assurez-vous que OneDrive est synchronisé ou monté (ex: via Rclone) au chemin `$HOME/OneDrive/`.
 > - Fermez les applications concernées (Firefox, Thunderbird, Neovim, etc.) avant de restaurer leurs configurations.
 > - La commande `rsync` est recommandée pour restaurer en toute sécurité.
@@ -33,13 +32,10 @@ bash bootstrap.sh
 1. Créer un **Nouvel élément** → type **Note sécurisée**
 2. Nom : `SSH GitHub`
 3. Dans **Notes**, coller le résultat de :
-
 ```bash
 cat ~/.ssh/id_rsa | base64 -w 0
 ```
-
 4. Ajouter un **Champ personnalisé** nommé `PUBLIC_KEY` avec le résultat de :
-
 ```bash
 cat ~/.ssh/id_rsa.pub
 ```
@@ -51,7 +47,17 @@ cat ~/.ssh/id_rsa.pub
 ### Méthode A — Via Bitwarden CLI (automatique)
 
 ```bash
-export BW_SESSION=$(bw unlock --raw)
+# Installer le CLI si nécessaire (binaire officiel, Node.js intégré)
+BW_VERSION="2026.2.0"
+wget -q "https://github.com/bitwarden/clients/releases/download/cli-v${BW_VERSION}/bw-linux-${BW_VERSION}.zip" -O /tmp/bw.zip
+unzip -q /tmp/bw.zip -d /tmp/bw
+sudo install -m 755 /tmp/bw/bw /usr/local/bin/bw
+rm -rf /tmp/bw.zip /tmp/bw
+
+echo -n "Mot de passe maître : " && read -s BW_PASS && echo ""
+export BW_PASS
+export BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+unset BW_PASS
 bw sync
 
 # Clé privée (stockée en base64 dans les notes)

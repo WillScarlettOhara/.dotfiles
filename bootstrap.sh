@@ -18,14 +18,21 @@ echo "======================================"
 # ─── 1. Dépendances minimales ───────────────────────────────────────────────
 echo ""
 echo "📦 Installation des dépendances..."
-sudo pacman -S --noconfirm jq stow git openssh nodejs npm 2>/dev/null || \
-  sudo apt install -y jq stow git openssh-client nodejs npm 2>/dev/null || true
+sudo pacman -S --noconfirm jq stow git openssh sshfs unzip wget 2>/dev/null || \
+  sudo apt install -y jq stow git openssh-client sshfs unzip wget 2>/dev/null || true
 
 # ─── 2. Bitwarden CLI ───────────────────────────────────────────────────────
 echo ""
-echo "🔐 Installation Bitwarden CLI..."
+echo "🔐 Installation Bitwarden CLI (binaire officiel)..."
 if ! command -v bw &>/dev/null; then
-  sudo npm install -g @bitwarden/cli
+  BW_VERSION="2026.2.0"
+  wget -q "https://github.com/bitwarden/clients/releases/download/cli-v${BW_VERSION}/bw-linux-${BW_VERSION}.zip" -O /tmp/bw.zip
+  unzip -q /tmp/bw.zip -d /tmp/bw
+  sudo install -m 755 /tmp/bw/bw /usr/local/bin/bw
+  rm -rf /tmp/bw.zip /tmp/bw
+  echo "  ✅ Bitwarden CLI ${BW_VERSION} installé"
+else
+  echo "  ✅ Bitwarden CLI déjà présent ($(bw --version))"
 fi
 
 # ─── 3. Login + unlock Bitwarden ────────────────────────────────────────────
@@ -41,9 +48,12 @@ fi
 
 echo ""
 echo "🔓 Déverrouillage du vault..."
-echo "  ⚠️  Entrez votre mot de passe maître ci-dessous :"
-BW_SESSION=""
-BW_SESSION=$(bw unlock --raw </dev/tty)
+echo -n "  Entrez votre mot de passe maître : "
+read -s -r BW_PASS </dev/tty
+echo ""
+export BW_PASS
+BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+unset BW_PASS
 export BW_SESSION
 
 if [[ -z "$BW_SESSION" ]]; then
@@ -92,9 +102,20 @@ if [[ -n "$PUBLIC_KEY" ]]; then
   echo "  ✅ Clé publique restaurée dans ~/.ssh/id_rsa.pub"
 fi
 
-# Ajoute GitHub aux known_hosts
+# Ajoute GitHub et les serveurs locaux aux known_hosts
+echo ""
+echo "  Ajout des known_hosts (GitHub + serveurs locaux)..."
 ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan REDACTED >> ~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan REDACTED >> ~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
+echo "  ✅ known_hosts mis à jour"
+
+# Copier les known_hosts pour root (nécessaire pour les mounts systemd)
+sudo mkdir -p /root/.ssh
+sudo sh -c "ssh-keyscan REDACTED >> /root/.ssh/known_hosts 2>/dev/null"
+sudo sh -c "ssh-keyscan REDACTED >> /root/.ssh/known_hosts 2>/dev/null"
+echo "  ✅ known_hosts root mis à jour"
 
 # Test connexion GitHub
 echo ""
@@ -136,5 +157,6 @@ echo "Prochaines étapes :"
 echo "  1. source ~/.zshrc"
 echo "  2. Monter OneDrive : systemctl --user start rclone-onedrive.service"
 echo "  3. Lancer le script de restauration OneDrive"
-echo "  4. Installer les packages : paru -S - < ~/.dotfiles/pkglist.txt"
+echo "  4. Restaurer fstab + mounts systemd (voir guide de restauration)"
+echo "  5. Installer les packages : paru -S - < ~/.dotfiles/pkglist.txt"
 echo "======================================"
