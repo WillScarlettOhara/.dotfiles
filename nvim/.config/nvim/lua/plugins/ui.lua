@@ -140,16 +140,21 @@ return {
           hint = "DiagnosticHint",
           arrow = "NonText",
           background = "CursorLine",
-          mixing_color = "None",
+          -- mixing_color = "None",
         },
         options = {
           show_source = { enabled = false, if_many = false },
           use_icons_from_diagnostic = false,
           set_arrow_to_diag_color = false,
-          add_messages = true,
+          add_messages = {
+            messages = true,
+            display_count = false,
+            use_max_severity = false,
+            show_multiple_glyphs = true,
+          },
           throttle = 20,
-          softwrap = 30,
-          multilines = { enabled = false, always_show = false },
+          softwrap = 100,
+          multilines = { enabled = true, always_show = true, trim_whitespaces = true },
           show_all_diags_on_cursorline = false,
           enable_on_insert = false,
           enable_on_select = false,
@@ -166,6 +171,9 @@ return {
           overwrite_events = nil,
         },
         disabled_ft = {},
+        blend = {
+          factor = 0.22,
+        },
       })
       vim.diagnostic.config({ virtual_text = false })
     end,
