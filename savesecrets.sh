@@ -88,8 +88,9 @@ if [[ -f ~/.config/rclone/rclone.conf ]]; then
 fi
 
 if [[ -f /etc/samba/.credentials ]]; then
+  # shellcheck disable=SC2024  # redirects to /dev/tty are intentional here
   sudo -v </dev/tty >/dev/tty 2>&1
-  sync_note "Samba Credentials" "$(sudo cat /etc/samba/.credentials)"
+  sync_note "Samba Credentials" "$(sudo sh -c 'cat /etc/samba/.credentials')"
 fi
 
 FSTAB_CONTENT="UUID=REDACTED  /mnt/2TB  ntfs3  uid=1000,gid=1000,dmask=022,fmask=133,auto,nofail  0  0
