@@ -18,7 +18,8 @@ if [[ "$BW_STATUS" == "locked" ]]; then
   read -s -r BW_PASS </dev/tty
   echo "" >/dev/tty
   export BW_PASS
-  export BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+  export BW_SESSION
+  BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
   unset BW_PASS
 fi
 
@@ -33,19 +34,24 @@ bw sync >/dev/null
 sync_ssh() {
   local name="$1"
   echo "  🔍 Vérification de l'existence de '$name' sur Bitwarden..."
-  local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
+  local item_id
+  item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
 
   if [[ -n "$item_id" ]]; then
     echo "  ⏭️  '$name' existe déjà. (Ignoré)"
   else
     echo "  ➕ Création de '$name' (Format Clé SSH natif)..."
     # Lecture en texte brut (pas de base64 nécessaire pour le type natif)
-    local priv=$(cat ~/.ssh/id_rsa)
-    local pub=$(cat ~/.ssh/id_rsa.pub)
+    local priv
+    priv=$(cat ~/.ssh/id_rsa)
+    local pub
+    pub=$(cat ~/.ssh/id_rsa.pub)
     # Calcul de l'empreinte exigée par Bitwarden
-    local fp=$(ssh-keygen -lf ~/.ssh/id_rsa.pub | awk '{print $2}')
+    local fp
+    fp=$(ssh-keygen -lf ~/.ssh/id_rsa.pub | awk '{print $2}')
 
-    local json=$(bw get template item | jq --arg priv "$priv" --arg pub "$pub" --arg fp "$fp" --arg name "$name" \
+    local json
+    json=$(bw get template item | jq --arg priv "$priv" --arg pub "$pub" --arg fp "$fp" --arg name "$name" \
       '.type = 5 | .name = $name | .sshKey = {"privateKey": $priv, "publicKey": $pub, "keyFingerprint": $fp}')
     echo "$json" | bw encode | bw create item >/dev/null
     echo "  ✅ Créé avec succès : $name"
@@ -57,13 +63,15 @@ sync_note() {
   local name="$1"
   local content="$2"
   echo "  🔍 Vérification de l'existence de '$name' sur Bitwarden..."
-  local item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
+  local item_id
+  item_id=$(bw list items --search "$name" 2>/dev/null | jq -r ".[] | select(.name == \"$name\") | .id" | head -n 1)
 
   if [[ -n "$item_id" ]]; then
     echo "  ⏭️  '$name' existe déjà. (Ignoré)"
   else
     echo "  ➕ Création de '$name'..."
-    local json=$(bw get template item | jq --arg notes "$content" --arg name "$name" \
+    local json
+    json=$(bw get template item | jq --arg notes "$content" --arg name "$name" \
       '.type = 2 | .name = $name | .secureNote = {"type": 0} | .notes = $notes')
     echo "$json" | bw encode | bw create item >/dev/null
     echo "  ✅ Créé avec succès : $name"
