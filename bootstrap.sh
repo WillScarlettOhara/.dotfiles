@@ -8,13 +8,51 @@ echo "======================================"
 echo "🚀 SUPER BOOTSTRAP (Zero-Touch Provisioning)"
 echo "======================================"
 
-# ─── 1. Dépendances minimales ───────────────────────────────────────────────
+# ─── 1. Installation des Paquets ────────────────────────────────────────────
 echo ""
-echo "📦 Installation des dépendances système..."
-sudo pacman -S --noconfirm jq stow git openssh sshfs unzip wget rclone base-devel 2>/dev/null || true
+echo "📦 Installation des paquets du système..."
 
-# ─── 2. Bitwarden CLI ───────────────────────────────────────────────────────
+PACKAGES=(
+  # Base et utilitaires cloud
+  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard
+  # Langages et environnements
+  nodejs npm python jre-openjdk rust luarocks
+  # Terminaux et CLI
+  tmux kitty lazygit ripgrep lsd zsh-theme-powerlevel10k
+  # Applications lourdes
+  neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
+  # Claviers spécifiques (AUR)
+  xkb-qwerty-fr
+  # Virtualisation KVM/QEMU (Spécifique Windows 11)
+  qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
+)
+
+# CachyOS utilise paru par défaut
+if command -v paru &>/dev/null; then
+  paru -S --needed --noconfirm "${PACKAGES[@]}"
+else
+  sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
+fi
+
+# ─── 2. Configuration du Pare-feu (Sunshine) ────────────────────────────────
+echo ""
+echo "🔥 Configuration du pare-feu pour Sunshine..."
+if command -v firewall-cmd &>/dev/null; then
+  sudo firewall-cmd --permanent --add-port={47984,47989,47990,48010}/tcp >/dev/null
+  sudo firewall-cmd --permanent --add-port={47998,47999,48000}/udp >/dev/null
+  sudo firewall-cmd --reload >/dev/null
+  echo "  ✅ Ports Firewalld ouverts"
+elif command -v ufw &>/dev/null; then
+  sudo ufw allow 47984,47989,47990,48010/tcp >/dev/null
+  sudo ufw allow 47998,47999,48000/udp >/dev/null
+  echo "  ✅ Ports UFW ouverts"
+else
+  echo "  ⚠️  Aucun pare-feu détecté (ufw / firewalld). Ignoré."
+fi
+
+# ─── 3. Bitwarden CLI ───────────────────────────────────────────────────────
 if ! command -v bw &>/dev/null; then
+  echo ""
   echo "🔐 Installation Bitwarden CLI..."
   BW_VERSION="2026.2.0"
   wget -q "https://github.com/bitwarden/clients/releases/download/cli-v${BW_VERSION}/bw-linux-${BW_VERSION}.zip" -O /tmp/bw.zip
@@ -23,19 +61,21 @@ if ! command -v bw &>/dev/null; then
   rm -rf /tmp/bw.zip /tmp/bw
 fi
 
-# ─── 3. Login + unlock Bitwarden ────────────────────────────────────────────
+# ─── 4. Login + unlock Bitwarden ────────────────────────────────────────────
 echo ""
 echo "🔑 Connexion à Bitwarden..."
 BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
 if [[ "$BW_STATUS" == "unauthenticated" ]]; then
-  bw login
+  bw login </dev/tty
 fi
 
 echo -n "🔓 Vault verrouillé. Entrez votre mot de passe maître : "
 read -s -r BW_PASS </dev/tty
 echo ""
+
 export BW_PASS
-export BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+export BW_SESSION
 unset BW_PASS
 
 if [[ -z "$BW_SESSION" ]]; then
@@ -44,7 +84,7 @@ if [[ -z "$BW_SESSION" ]]; then
 fi
 bw sync &>/dev/null
 
-# ─── 4. Récupération des clés SSH depuis Bitwarden ──────────────────────────
+# ─── 5. Récupération des clés SSH depuis Bitwarden ──────────────────────────
 echo ""
 echo "🗝️  Récupération des clés SSH..."
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
@@ -52,117 +92,111 @@ bw get item "SSH GitHub" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_rsa
 bw get item "SSH GitHub" | jq -r '.sshKey.publicKey // empty' >~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
 
-ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
-ssh-keyscan REDACTED >>~/.ssh/known_hosts 2>/dev/null
-ssh-keyscan REDACTED >>~/.ssh/known_hosts 2>/dev/null
+{
+  ssh-keyscan github.com
+  ssh-keyscan REDACTED
+  ssh-keyscan REDACTED
+} >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 
-# ─── 5. Clone des dotfiles ──────────────────────────────────────────────────
+sudo mkdir -p /root/.ssh
+sudo sh -c "{
+  ssh-keyscan REDACTED
+  ssh-keyscan REDACTED
+} >> /root/.ssh/known_hosts 2>/dev/null"
+
+# ─── 6. Clone des dotfiles ──────────────────────────────────────────────────
 echo ""
-echo "📂 Clone des dotfiles..."
+echo "📂 Clone des dotfiles depuis GitHub..."
 if [[ ! -d "$HOME/.dotfiles" ]]; then
   git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles"
 fi
 
-# ─── 6. Application des dotfiles via stow ───────────────────────────────────
+# ─── 7. Application des dotfiles via stow ───────────────────────────────────
+echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-stow --adopt zsh tmux git nvim kitty mpv lsd 2>/dev/null || stow zsh tmux git nvim kitty mpv lsd
+STOW_FOLDERS=(zsh tmux git nvim kitty mpv lsd local-bin local-apps systemd-user)
+stow --adopt "${STOW_FOLDERS[@]}" 2>/dev/null || stow "${STOW_FOLDERS[@]}"
+echo "  ✅ Dotfiles, scripts, raccourcis et services appliqués !"
 
-# ─── 7. Installation des paquets (Optionnel mais recommandé) ────────────────
+# ─── 8. Restauration des configurations système (Depuis Git) ────────────────
 echo ""
-echo "📦 Installation de tous les paquets du système (pkglist.txt)..."
-if command -v paru &>/dev/null && [[ -f "$HOME/.dotfiles/pkglist.txt" ]]; then
-  paru -S --needed --noconfirm - <"$HOME/.dotfiles/pkglist.txt"
-else
-  echo "  ⚠️  Paru non installé ou pkglist.txt introuvable. Ignoré."
-fi
+echo "⚙️  Restauration système (Gnome & Mounts)..."
+sudo cp "$HOME/.dotfiles/system-mounts/"*.mount /etc/systemd/system/ 2>/dev/null || true
+sudo systemctl daemon-reload
+dconf load /org/gnome/shell/extensions/gjsosk/ <"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
+echo "  ✅ Mounts et réglages Gnome restaurés."
 
-# ─── 8. Récupération des Secrets Système (Rclone, Samba, fstab) ─────────────
+# ─── 9. Récupération des Secrets Système (Bitwarden) ────────────────────────
 echo ""
 echo "🔐 Récupération des secrets système depuis Bitwarden..."
-# Rclone
 mkdir -p ~/.config/rclone
 bw get item "Config Rclone" | jq -r '.notes // empty' >~/.config/rclone/rclone.conf
 
-# Samba Credentials
 sudo bash -c "bw get item 'Samba Credentials' | jq -r '.notes // empty' > /etc/samba/.credentials"
 sudo chmod 600 /etc/samba/.credentials
 
-# Fstab (Affiche pour info, mais demande validation avant d'écrire car dangereux)
 echo "  📝 Lignes Fstab récupérées :"
 bw get item "Fstab Mounts" | jq -r '.notes // empty' | sudo tee /tmp/fstab_append.txt >/dev/null
 cat /tmp/fstab_append.txt
-echo "  (Ces lignes ont été sauvegardées dans /tmp/fstab_append.txt. À ajouter manuellement plus tard par sécurité)."
+echo "  (Ces lignes sont prêtes dans /tmp/fstab_append.txt)."
 
-# Verrouillage BW car on n'en a plus besoin
 bw lock &>/dev/null
 
-# ─── 9. Montage Automatique de OneDrive ─────────────────────────────────────
+# ─── 10. Montage Automatique de OneDrive ────────────────────────────────────
 echo ""
-echo "☁️  Démarrage du service Rclone OneDrive..."
+echo "☁️  Démarrage de Rclone OneDrive..."
 systemctl --user daemon-reload
 systemctl --user enable --now rclone-onedrive.service
 
 echo "  ⏳ Attente de la connexion à OneDrive..."
 BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
+
+# SC1069 totalement éradiqué (Espace ajouté après while et après [)
 while [ ! -d "$BACKUP_DIR" ]; do
   sleep 2
   echo -n "."
 done
 echo " ✅ OneDrive connecté !"
 
-# ─── 10. Restauration OneDrive (App Configs & Scripts) ──────────────────────
+# ─── 11. Restauration depuis OneDrive (Uniquement la volumétrie) ────────────
 echo ""
-echo "🔄 Restauration des configurations depuis OneDrive..."
+echo "🔄 Restauration des profils lourds depuis OneDrive..."
 RSYNC_CMD=(rsync -auL --info=progress2)
 
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Configs_App/" ~/.config/
-mkdir -p ~/.local/bin ~/.local/share/applications
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Scripts_et_Raccourcis/bin/" ~/.local/bin/
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Scripts_et_Raccourcis/applications/" ~/.local/share/applications/
-chmod +x ~/.local/bin/*
-
-# ─── 11. Restauration Bluetooth (Souris) ────────────────────────────────────
-echo ""
-echo "🖱️  Restauration des clés Bluetooth..."
-sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Secrets/bluetooth/" /var/lib/bluetooth/
+# Bluetooth
+sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Secrets/bluetooth/" /var/lib/bluetooth/ 2>/dev/null || true
 sudo systemctl restart bluetooth
-echo "  ✅ Bluetooth redémarré (votre souris devrait fonctionner)"
 
-# ─── 12. Restauration des Profils Lourds (Firefox, Thunderbird, etc) ────────
-echo ""
-echo "🦊 Restauration de Firefox & Thunderbird..."
-mkdir -p ~/.config/mozilla/firefox ~/.thunderbird
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/firefox/" ~/.config/mozilla/firefox/
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/thunderbird/" ~/.thunderbird/
+# Navigateurs et Apps Lourdes
+mkdir -p ~/.config/mozilla/firefox ~/.thunderbird ~/.config/sunshine
+"${RSYNC_CMD[@]}" "$BACKUP_DIR/Configs_App/sunshine/" ~/.config/sunshine/ 2>/dev/null || true
+"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/firefox/" ~/.config/mozilla/firefox/ 2>/dev/null || true
+"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/thunderbird/" ~/.thunderbird/ 2>/dev/null || true
 "${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/libreoffice/" ~/.config/libreoffice/ 2>/dev/null || true
 "${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/calibre/" ~/.config/calibre/ 2>/dev/null || true
+"${RSYNC_CMD[@]}" "$BACKUP_DIR/Sigil/" ~/.local/share/sigil-ebook/ 2>/dev/null || true
 
-# ─── 13. Restauration Mounts SSHFS & Services Systemd ───────────────────────
+# ─── 12. Préparation des Mounts & VM ────────────────────────────────────────
 echo ""
-echo "🖥️  Restauration des Services Systemd & Mounts..."
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Services_Systemd/User/" ~/.config/systemd/user/
-sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Services_Systemd/System/"*.mount /etc/systemd/system/ 2>/dev/null || true
-
+echo "🖥️  Préparation de l'Hyperviseur et des Mounts..."
 sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/1TB /mnt/2TB /mnt/samba/data
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 
-sudo systemctl daemon-reload
-# sudo systemctl enable --now mnt-calibreweb.mount mnt-torrent.mount
+# Activation du service de virtualisation (Requis par virt-manager/virsh)
+sudo systemctl enable --now libvirtd
+# Ajout de l'utilisateur aux groupes de virtualisation pour ne pas taper sudo tout le temps
+sudo usermod -aG libvirt,kvm "$USER"
 
-# ─── 14. Restauration de la VM Windows 11 ───────────────────────────────────
-echo ""
-echo "🪟 Restauration de la Machine Virtuelle (qcow2)..."
 export NOM_VM="win11"
 if [[ -f "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2" ]]; then
+  echo "🪟 Restauration de la Machine Virtuelle Windows 11 (qcow2)..."
   sudo cp "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2" /var/lib/libvirt/images/
   sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2"
   sudo chmod 644 "/var/lib/libvirt/images/${NOM_VM}.qcow2"
-  sudo virsh define "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml"
-  echo "  ✅ VM définie dans KVM"
-else
-  echo "  ⚠️  VM introuvable dans la sauvegarde."
+  sudo virsh define "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" 2>/dev/null || true
+  echo "  ✅ VM Windows 11 définie dans KVM"
 fi
 
 echo ""
@@ -171,5 +205,6 @@ echo "🎉 RESTAURATION TOTALE TERMINÉE AVEC SUCCÈS !"
 echo "========================================================="
 echo "Dernières actions manuelles :"
 echo "1. Ajoutez le contenu de /tmp/fstab_append.txt à votre /etc/fstab (sudo nvim /etc/fstab)"
-echo "2. Lancez 'source ~/.zshrc'"
+echo "2. Déconnectez puis reconnectez votre session utilisateur (pour les droits KVM/libvirt)"
+echo "3. Lancez 'source ~/.zshrc'"
 

@@ -52,17 +52,6 @@ log ""
 bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
 
 # ─── 3. OneDrive (La Volumétrie) ───────────────────────────────────────────────
-log ""
-log "☁️  Sauvegarde OneDrive (Scripts & Raccourcis)..."
-run "$HOME/.local/bin" "${RSYNC_CMD[@]}" ~/.local/bin/ "$BACKUP_DIR/Scripts_et_Raccourcis/bin/"
-run "$HOME/.local/share/applications" "${RSYNC_CMD[@]}" ~/.local/share/applications/ "$BACKUP_DIR/Scripts_et_Raccourcis/applications/"
-
-log ""
-log "🔄 Services Systemd..."
-run "systemd/user" "${RSYNC_CMD[@]}" ~/.config/systemd/user/ "$BACKUP_DIR/Services_Systemd/User/"
-run "systemd/system *.mount" sudo "${RSYNC_CMD[@]}" /etc/systemd/system/*.mount "$BACKUP_DIR/Services_Systemd/System/"
-sudo chown -R "$USER:$USER" "$BACKUP_DIR/Services_Systemd/System/" 2>/dev/null || true
-
 # CORRECTION : Retour de TOUTES les exclusions Firefox
 log ""
 log "🦊 Firefox (Force Copy)..."
@@ -125,6 +114,10 @@ log "📚 Autres apps (LibreOffice, Calibre, Sigil)..."
 run "libreoffice" "${RSYNC_CMD[@]}" --exclude='4/cache/' ~/.config/libreoffice "$BACKUP_DIR/Profils_Lourds/"
 run "calibre" "${RSYNC_CMD[@]}" --exclude='caches/' ~/.config/calibre "$BACKUP_DIR/Profils_Lourds/" || true
 run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Preview-Cache/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
+
+log ""
+log "⚙️  Configs App..."
+run "sunshine" "${RSYNC_CMD[@]}" ~/.config/sunshine "$BACKUP_DIR/Configs_App/" || true
 
 log ""
 log "🖥️  Machine Virtuelle win11..."
