@@ -2,16 +2,18 @@
 font-family = "JetBrainsMono Nerd Font"
 font-size = 12
 
-# ─── Thème et Transparence ───
+# ─── Transparence et Couleurs Manuelles ───
 background-opacity = 0.9
 background-opacity-cells = true
-theme = Gruvbox Dark Hard
+
+# On supprime la ligne "theme =" car on définit tout manuellement en dessous :
 background = #1d2021
 foreground = #ebdbb2
 selection-background = #665c54
 selection-foreground = #ebdbb2
 cursor-color = #ebdbb2
 cursor-text = #1d2021
+
 palette = 0=#1d2021
 palette = 1=#cc241d
 palette = 2=#98971a
@@ -37,4 +39,4 @@ window-padding-x = 10
 window-padding-y = 10
 
 # ─── Comportement ───
-confirm-close-surface = true
+confirm-close-surface = false
