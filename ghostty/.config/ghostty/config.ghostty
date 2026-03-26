@@ -13,6 +13,7 @@ selection-background = #665c54
 selection-foreground = #ebdbb2
 cursor-color = #ebdbb2
 cursor-text = #1d2021
+adjust-cursor-thickness = 4
 
 palette = 0=#1d2021
 palette = 1=#cc241d
