@@ -1,0 +1,22 @@
+# ─── Polices ───
+font-family = "JetBrainsMono Nerd Font"
+font-size = 12
+
+# ─── Thème et Transparence ───
+theme = gruvbox-hard-dark
+# background-opacity = 0.9
+
+# ─── Curseur ───
+cursor-color = #928374
+cursor-text = #1d2021
+cursor-style = underline
+
+# ─── Fenêtre (Plein écran) ───
+maximize = true
+window-decoration = false
+mouse-hide-while-typing = true
+window-padding-x = 4
+window-padding-y = 4
+
+# ─── Comportement ───
+confirm-close-surface = true

@@ -18,7 +18,7 @@ PACKAGES=(
   # Langages et environnements
   nodejs npm python jre-openjdk rust luarocks
   # Terminaux et CLI
-  tmux alacritty lazygit ripgrep lsd zsh-theme-powerlevel10k
+  tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
   # Applications lourdes
   neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
   # Claviers spécifiques (AUR)
@@ -116,7 +116,7 @@ fi
 echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-STOW_FOLDERS=(zsh tmux git nvim alacritty mpv lsd local-bin local-apps systemd-user)
+STOW_FOLDERS=(zsh tmux git nvim ghostty mpv lsd local-bin local-apps systemd-user)
 stow --adopt "${STOW_FOLDERS[@]}" 2>/dev/null || stow "${STOW_FOLDERS[@]}"
 echo "  ✅ Dotfiles, scripts, raccourcis et services appliqués !"
 
