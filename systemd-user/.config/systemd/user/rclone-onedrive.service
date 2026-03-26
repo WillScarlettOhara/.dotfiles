@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=simple
 ExecStartPre=/usr/bin/mkdir -p %h/OneDrive
 ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
+  --allow-non-empty \
   --vfs-cache-mode full \
   --vfs-cache-max-size 50G \
   --vfs-cache-max-age 24h \
