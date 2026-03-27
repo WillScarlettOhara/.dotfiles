@@ -132,7 +132,7 @@ return {
       require("tiny-inline-diagnostic").setup({
         preset = "classic",
         transparent_bg = false,
-        transparent_cursorline = false,
+        transparent_cursorline = true,
         hi = {
           error = "DiagnosticError",
           warn = "DiagnosticWarn",
@@ -439,6 +439,7 @@ return {
         },
         lualine_z = {
           "encoding",
+          "progress",
           "location",
         },
       },
