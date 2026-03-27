@@ -91,8 +91,6 @@ vim.opt.conceallevel = 0 -- Show all text normally (no concealment)
 -- ============================================================================
 vim.opt.title = true -- Set window title to filename
 vim.opt.guifont = "monospace:h17" -- Font for GUI Neovim (e.g., Neovide)
--- Minimal number of screen lines to keep above and below the cursor.
-vim.o.scrolloff = 999
 
 -- ============================================================================
 -- Filetype Detection

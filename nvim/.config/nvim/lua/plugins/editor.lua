@@ -110,4 +110,20 @@ return {
     event = "BufReadPre",
     opts = {},
   },
+
+  -- ════════════════════════════════════════════════════════════════════════════
+  -- Cursorline always centered
+  -- ════════════════════════════════════════════════════════════════════════════
+  {
+    "arnamak/stay-centered.nvim",
+    lazy = false,
+    opts = {},
+    keys = {
+      {
+        "<leader>uC",
+        "<cmd>lua require('stay-centered').toggle()<cr>",
+        desc = "Toggle stay-centered",
+      },
+    },
+  },
 }
