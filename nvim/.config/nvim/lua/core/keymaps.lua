@@ -95,3 +95,12 @@ vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit Insert" })
 -- ════════════════════════════════════════════════════════════════════════════
 
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit Terminal Mode" })
+
+vim.keymap.set("n", "<leader>H", function()
+  local word = vim.fn.expand("<cWORD>")
+  local ok = pcall(vim.cmd.help, word)
+  if not ok then
+    -- Ouvre la cmdline avec le mot pré-rempli pour correction manuelle
+    vim.fn.feedkeys(":help " .. word, "n")
+  end
+end, { desc = "Help sous le curseur" })
