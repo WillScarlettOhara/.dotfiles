@@ -55,10 +55,9 @@ return {
     opts = {
       preset = "helix",
       delay = 250,
-      sort = { "alphanum", "local", "order", "group", "mod" },
+      sort = { "group", "alphanum", "local", "order", "mod" },
       icons = {
-        mappings = false,
-        rules = false,
+        mappings = true,
         breadcrumb = "»",
         separator = "→",
         group = "+",
