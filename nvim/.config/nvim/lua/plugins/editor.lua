@@ -67,20 +67,31 @@ return {
   {
     "nvim-mini/mini.nvim",
     config = function()
-      -- Better Around/Inside textobjects
-      -- Examples:
-      --  - va)  - [V]isually select [A]round [)]paren
-      --  - yinq - [Y]ank [I]nside [N]ext [']quote
-      --  - ci'  - [C]hange [I]nside [']quote
-      -- require("mini.ai").setup({ n_lines = 500 })
-
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-      -- - sd'   - [S]urround [D]elete [']quotes
-      -- - sr)'  - [S]urround [R]eplace [)] [']
-      require("mini.surround").setup()
+      require("mini.surround").setup({
+        mappings = {
+          add = "gsa",
+          delete = "gsd",
+          find = "gsf",
+          find_left = "gsF",
+          highlight = "gsh",
+          replace = "gsr",
+          update_n_lines = "gsn",
+        },
+      })
 
       require("mini.pairs").setup()
+
+      local wk = require("which-key")
+      wk.add({
+        { "gs", group = "Surround" },
+        { "gsa", desc = "Add surrounding" },
+        { "gsd", desc = "Delete surrounding" },
+        { "gsr", desc = "Replace surrounding" },
+        { "gsf", desc = "Find right surrounding" },
+        { "gsF", desc = "Find left surrounding" },
+        { "gsh", desc = "Highlight surrounding" },
+        { "gsn", desc = "Update n lines" },
+      })
     end,
   },
 

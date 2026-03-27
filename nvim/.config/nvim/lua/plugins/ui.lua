@@ -99,8 +99,6 @@ return {
         { "[", group = "Prev" },
         { "]", group = "Next" },
         { "g", group = "Goto" },
-        -- Surround (mini.surround)
-        { "gs", group = "Surround" },
       },
     },
     keys = {
