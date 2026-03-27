@@ -84,6 +84,9 @@ vim.keymap.set(
 -- Select all
 vim.keymap.set("n", "<C-a>", "ggVG", { desc = "Select All" })
 
+-- Semicolon end of line
+vim.keymap.set("i", "<C-;>", "<Esc>A;<CR>", { desc = "Semicolon end of line" })
+
 -- ════════════════════════════════════════════════════════════════════════════
 -- Insert Mode Escapes
 -- ════════════════════════════════════════════════════════════════════════════
