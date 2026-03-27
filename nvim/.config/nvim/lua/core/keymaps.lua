@@ -43,10 +43,6 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move Lines Up" })
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, desc = "Up (wrapped)" })
 vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, desc = "Down (wrapped)" })
 
--- Start/End of line (easier than ^ and $)
-vim.keymap.set({ "n", "x", "o" }, "H", "^", { desc = "Start of Line" })
-vim.keymap.set({ "n", "x", "o" }, "L", "g_", { desc = "End of Line" })
-
 -- Keep search results centered
 vim.keymap.set("n", "n", "nzzzv", { desc = "Next Match (centered)" })
 vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev Match (centered)" })
