@@ -39,7 +39,6 @@ return {
       vim.g.gruvbox_material_diagnostic_virtual_text = "colored"
       vim.cmd("colorscheme gruvbox-material")
       vim.api.nvim_set_hl(0, "SnacksDashboardHeader", { fg = "#83a598", bold = true })
-      vim.api.nvim_set_hl(0, "LineNrCurrent", { fg = "#FFCC00" })
     end,
   },
 }

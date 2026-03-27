@@ -50,8 +50,6 @@ vim.opt.cmdheight = 1 -- Height of command line area
 vim.opt.pumheight = 10 -- Maximum height of popup menu
 vim.opt.fillchars = { eob = " " } -- Hide ~ characters on empty lines
 vim.o.winborder = "rounded" -- Use rounded borders for floating windows
-vim.opt.statuscolumn =
-  "%s%{%v:relnum==0?'%#LineNrCurrent#':'%#LineNr#'%}%{v:lnum}%#NonText#│%{%v:relnum!=0?'%#LineNr#':''%}%{v:relnum==0?'':v:relnum}"
 
 -- ============================================================================
 -- Search
