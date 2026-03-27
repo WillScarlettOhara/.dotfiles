@@ -642,13 +642,6 @@ return {
     -- <leader>u = UI / Toggles
     -- ════════════════════════════════════════════════════════════════════
     {
-      "<leader>uC",
-      function()
-        Snacks.picker.colorschemes()
-      end,
-      desc = "Colorschemes",
-    },
-    {
       "<leader>uz",
       function()
         Snacks.zen()

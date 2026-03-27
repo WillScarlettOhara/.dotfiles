@@ -151,7 +151,7 @@ return {
             show_multiple_glyphs = true,
           },
           throttle = 20,
-          softwrap = 100,
+          softwrap = 30,
           multilines = { enabled = true, always_show = true, trim_whitespaces = true },
           show_all_diags_on_cursorline = false,
           enable_on_insert = false,
