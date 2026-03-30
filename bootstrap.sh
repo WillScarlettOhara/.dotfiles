@@ -51,15 +51,46 @@ else
 fi
 
 # ─── 3. Bitwarden CLI ───────────────────────────────────────────────────────
-if ! command -v bw &>/dev/null; then
-  echo ""
-  echo "🔐 Installation Bitwarden CLI..."
-  BW_VERSION="2026.2.0"
-  wget -q "https://github.com/bitwarden/clients/releases/download/cli-v${BW_VERSION}/bw-linux-${BW_VERSION}.zip" -O /tmp/bw.zip
-  unzip -q /tmp/bw.zip -d /tmp/bw
-  sudo install -m 755 /tmp/bw/bw /usr/local/bin/bw
-  rm -rf /tmp/bw.zip /tmp/bw
-fi
+install_bitwarden_cli() {
+  step "Checking Bitwarden CLI"
+
+  # On garde Node/NVM car c'est utile pour d'autres outils (Neovim/Tree-sitter)
+  _setup_node_env
+
+  local current_version="0.0.0"
+  local latest_version
+
+  # Récupérer la dernière version sur GitHub (API)
+  latest_version=$(curl -s "https://api.github.com/repos/bitwarden/clients/releases" |
+    jq -r '[.[] | select(.name | contains("CLI"))][0].tag_name' | sed 's/cli-v//' || echo "")
+
+  if has bw; then
+    # On vérifie si le binaire répond. S'il crash (WASM error), current_version reste 0.0.0
+    current_version=$(NODE_NO_WARNINGS=1 bw --version 2>/dev/null || echo "0.0.0")
+
+    if [[ "$current_version" == "$latest_version" && "$current_version" != "0.0.0" ]]; then
+      ok "Bitwarden CLI is up to date ($current_version)"
+      return
+    elif [[ "$current_version" != "0.0.0" ]]; then
+      info "Update available: $current_version -> $latest_version"
+    else
+      warn "Bitwarden CLI found but corrupted or non-functional. Reinstalling..."
+    fi
+  fi
+
+  # Installation ou Mise à jour
+  info "Downloading Bitwarden CLI v$latest_version..."
+
+  # Nettoyage préventif des anciens liens/binaires pour éviter les conflits
+  $SUDO rm -f /usr/local/bin/bw 2>/dev/null || true
+
+  wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
+  unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
+  $SUDO install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
+  rm -rf /tmp/bw.zip /tmp/bw_extract
+
+  ok "Bitwarden CLI installed/updated ($(bw --version))"
+}
 
 # ─── 4. Login + unlock Bitwarden ────────────────────────────────────────────
 echo ""
