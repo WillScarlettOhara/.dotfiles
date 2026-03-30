@@ -73,17 +73,14 @@ alias rm='rm -i'                # Demande confirmation avant de supprimer (évit
 alias cp='cp -i'                # Demande confirmation avant d'écraser un fichier
 alias mv='mv -i'                # Demande confirmation avant d'écraser
 alias mkdir='mkdir -p'          # Crée les dossiers parents automatiquement si besoin
-
 # --- NAVIGATION ÉCLAIR ---
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias -- -='cd -'               # Retourne instantanément au dossier précédent
-
 # --- SYSTÈME (Arch / CachyOS) ---
 alias update='paru -Syu'        # Met à jour tout le système et les paquets AUR
 alias cleanup='paru -Sc --noconfirm && paru -c' # Nettoie le cache et supprime les paquets orphelins
-
 # --- RÉSEAU & INFOS ---
 alias ports='sudo lsof -iTCP -sTCP:LISTEN -P -n' # Voir exactement quels ports/apps écoutent sur ton PC
 alias myip='curl ifconfig.me'   # Afficher ton adresse IP publique
@@ -106,7 +103,7 @@ export LS_COLORS="*.lua=38;5;214:*.rs=38;5;167:*.py=38;5;109:*.md=38;5;108:*.tom
 # ─── ZSH VI MODE CONFIGURATION ──────────────────────────────────────────────
 function zvm_config() {
   ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT       # Commence toujours en mode Insertion
-  ZVM_VI_INSERT_ESCAPE_BINDKEY=jk           # Tape 'jk' rapidement pour passer en mode Normal
+  ZVM_VI_ESCAPE_BINDKEY=jj
   ZVM_CURSOR_STYLE_ENABLED=true             # Change la forme du curseur (Ligne = Insert, Bloc = Normal)
 }
 zinit light jeffreytse/zsh-vi-mode
