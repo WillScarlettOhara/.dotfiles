@@ -79,21 +79,30 @@ log "🐙 Sauvegarde GitHub des Dotfiles..."
 sudo cp /etc/systemd/system/*.mount "$HOME/.dotfiles/system-mounts/" 2>/dev/null || true
 dconf dump /org/gnome/shell/extensions/gjsosk/ >"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
 
-if git -C "$HOME/.dotfiles" diff --quiet && git -C "$HOME/.dotfiles" diff --cached --quiet && git -C "$HOME/.dotfiles" ls-files --others --exclude-standard | grep -q '^'; then
-  log "  ✅ Aucun changement détecté"
+# Vérification blindée : S'il n'y a absolument aucun changement (vide)
+if [ -z "$(git -C "$HOME/.dotfiles" status --porcelain)" ]; then
+  log "  ✅ Aucun changement détecté dans les dotfiles."
 else
   git -C "$HOME/.dotfiles" add .
-  git -C "$HOME/.dotfiles" commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null
-  if git -C "$HOME/.dotfiles" push -q origin master; then
-    log "  ✅ Changements pushés sur GitHub"
+  # On intègre git commit dans un 'if' pour que 'set -e' ne tue pas le script s'il échoue
+  if git -C "$HOME/.dotfiles" commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null 2>&1; then
+    if git -C "$HOME/.dotfiles" push -q origin master; then
+      log "  ✅ Changements pushés sur GitHub"
+    else
+      log "  ⚠️  Erreur lors du push GitHub (Vérifiez vos clés SSH)"
+    fi
   else
-    log "  ⚠️  Erreur lors du push GitHub"
+    log "  ⚠️  Impossible de commiter (Identité Git nom/email non configurée ?)"
   fi
 fi
 
 # ─── 3. Bitwarden (Les Secrets) ────────────────────────────────────────────────
 log ""
-bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
+if [ -f "$HOME/.dotfiles/savesecrets.sh" ]; then
+  bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
+else
+  log "  ⚠️  Script savesecrets.sh introuvable, ignoré."
+fi
 
 # ─── 4. Création des exclusions Restic ─────────────────────────────────────────
 EXCLUDES_FILE="/tmp/restic_excludes.txt"
