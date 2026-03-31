@@ -10,7 +10,7 @@ echo "======================================"
 
 # ─── 0. Détection DE (GNOME) ────────────────────────────────────────────────
 IS_GNOME=false
-if [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
+if [[ "${XDG_CURRENT_DESKTOP^^}" = *"GNOME"* ]] || [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
   IS_GNOME=true
   echo "🖥️  Environnement GNOME détecté."
 fi
@@ -21,7 +21,7 @@ echo "📦 Installation des paquets du système..."
 
 PACKAGES=(
   # Base et utilitaires cloud
-  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
+  base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
   # Langages et environnements
   nodejs npm python jre-openjdk rust luarocks
   # Terminaux et CLI
@@ -54,7 +54,6 @@ fi
 echo "⌨️  Configuration automatique du clavier..."
 if [ "$IS_GNOME" = true ]; then
   echo "  🖥️  GNOME détecté : Application de gsettings pour qwerty-fr..."
-  # Applique le clavier pour l'utilisateur courant sous GNOME
   gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us+qwerty-fr')]" 2>/dev/null || true
 else
   echo "  🐧 Autre DE détecté : Application via localectl..."
@@ -79,43 +78,37 @@ fi
 
 # ─── 3. Bitwarden CLI ───────────────────────────────────────────────────────
 install_bitwarden_cli() {
-  step "Checking Bitwarden CLI"
-
-  _setup_node_env
-
+  echo "🔄 Vérification de Bitwarden CLI..."
   local current_version="0.0.0"
   local latest_version
 
   latest_version=$(curl -s "https://api.github.com/repos/bitwarden/clients/releases" |
     jq -r '[.[] | select(.name | contains("CLI"))][0].tag_name' | sed 's/cli-v//' || echo "")
 
-  if has bw; then
+  if command -v bw &>/dev/null; then
     current_version=$(NODE_NO_WARNINGS=1 bw --version 2>/dev/null || echo "0.0.0")
 
-    if [[ "$current_version" == "$latest_version" && "$current_version" != "0.0.0" ]]; then
-      ok "Bitwarden CLI is up to date ($current_version)"
+    if [ "$current_version" = "$latest_version" ] && [ "$current_version" != "0.0.0" ]; then
+      echo "  ✅ Bitwarden CLI est à jour ($current_version)"
       return
-    elif [[ "$current_version" != "0.0.0" ]]; then
-      info "Update available: $current_version -> $latest_version"
-    else
-      warn "Bitwarden CLI found but corrupted or non-functional. Reinstalling..."
     fi
   fi
 
-  info "Downloading Bitwarden CLI v$latest_version..."
-  $SUDO rm -f /usr/local/bin/bw 2>/dev/null || true
+  echo "  ⬇️ Téléchargement de Bitwarden CLI v$latest_version..."
+  sudo rm -f /usr/local/bin/bw 2>/dev/null || true
   wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
   unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
-  $SUDO install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
+  sudo install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
   rm -rf /tmp/bw.zip /tmp/bw_extract
-  ok "Bitwarden CLI installed/updated ($(bw --version))"
+  echo "  ✅ Bitwarden CLI installé."
 }
+install_bitwarden_cli
 
 # ─── 4. Login + unlock Bitwarden ────────────────────────────────────────────
 echo ""
 echo "🔑 Connexion à Bitwarden..."
 BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
-if [[ "$BW_STATUS" == "unauthenticated" ]]; then
+if [ "$BW_STATUS" = "unauthenticated" ]; then
   bw login </dev/tty
 fi
 
@@ -128,7 +121,7 @@ BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
 export BW_SESSION
 unset BW_PASS
 
-if [[ -z "$BW_SESSION" ]]; then
+if [ -z "$BW_SESSION" ]; then
   echo "❌ Échec du déverrouillage."
   exit 1
 fi
@@ -158,13 +151,13 @@ sudo sh -c "{
 # ─── 6. Clone des dotfiles & Extensions GNOME ───────────────────────────────
 echo ""
 echo "📂 Clone des dotfiles depuis GitHub..."
-if [[ ! -d "$HOME/.dotfiles" ]]; then
+if [ ! -d "$HOME/.dotfiles" ]; then
+  # Vu que ton repo sera public, tu pourrais utiliser https, mais ssh marche très bien ici.
   git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles"
 fi
 
 if [ "$IS_GNOME" = true ]; then
   echo "⌨️  Installation de gjs-osk (Clavier visuel) pour GNOME..."
-  # On récupère le bon zip pour GNOME 45+
   GJS_OSK_URL=$(curl -s https://api.github.com/repos/Vishram1123/gjs-osk/releases/latest | jq -r '.assets[] | select(.name == "gjsosk@vishram1123_main.zip") | .browser_download_url')
   if [ -n "$GJS_OSK_URL" ] && [ "$GJS_OSK_URL" != "null" ]; then
     wget -q "$GJS_OSK_URL" -O /tmp/gjsosk.zip
@@ -182,7 +175,7 @@ echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
 STOW_FOLDERS=(zsh tmux git nvim ghostty mpv lsd local-bin local-apps systemd-user)
 stow --adopt "${STOW_FOLDERS[@]}" 2>/dev/null || stow "${STOW_FOLDERS[@]}"
-echo "  ✅ Dotfiles, scripts, raccourcis et services appliqués !"
+echo "  ✅ Dotfiles et scripts appliqués !"
 
 # ─── 8. Restauration des configurations système (Depuis Git) ────────────────
 echo ""
@@ -201,6 +194,11 @@ fi
 # ─── 9. Récupération des Secrets Système (Bitwarden) ────────────────────────
 echo ""
 echo "🔐 Récupération des secrets système depuis Bitwarden..."
+
+# Récupération mot de passe Restic (à stocker dans les notes d'un item Bitwarden nommé "Restic Password")
+export RESTIC_PASSWORD
+RESTIC_PASSWORD=$(bw get item "Restic Password" | jq -r '.notes // empty')
+
 mkdir -p ~/.config/rclone
 bw get item "Config Rclone" | jq -r '.notes // empty' >~/.config/rclone/rclone.conf
 
@@ -229,21 +227,38 @@ while [ ! -d "$BACKUP_DIR" ]; do
 done
 echo " ✅ OneDrive connecté !"
 
-# ─── 11. Restauration depuis OneDrive (Uniquement la volumétrie) ────────────
+# ─── 11. Restauration ultra-rapide avec Restic ──────────────────────────────
 echo ""
-echo "🔄 Restauration des profils lourds depuis OneDrive..."
-RSYNC_CMD=(rsync -aL --info=progress2)
+echo "🔄 Restauration des profils lourds via Restic..."
 
-sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Secrets/bluetooth/" /var/lib/bluetooth/ 2>/dev/null || true
-sudo systemctl restart bluetooth
+# On pointe vers le dossier restic contenu sur ton OneDrive monté.
+# (Exemple de chemin : ~/OneDrive/Linux_Backup_2026/restic-repo)
+export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
 
-mkdir -p ~/.config/mozilla/firefox ~/.thunderbird ~/.config/sunshine
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Configs_App/sunshine/" ~/.config/sunshine/ 2>/dev/null || true
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/firefox/" ~/.config/mozilla/firefox/ 2>/dev/null || true
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/thunderbird/" ~/.thunderbird/ 2>/dev/null || true
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/libreoffice/" ~/.config/libreoffice/ 2>/dev/null || true
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/calibre/" ~/.config/calibre/ 2>/dev/null || true
-"${RSYNC_CMD[@]}" "$BACKUP_DIR/Sigil/" ~/.local/share/sigil-ebook/ 2>/dev/null || true
+if [ -z "$RESTIC_PASSWORD" ]; then
+  echo "❌ Erreur : Mot de passe Restic introuvable dans Bitwarden."
+else
+  # Restauration des fichiers utilisateurs (Ciblés vers la racine / car restic stocke les chemins absolus)
+  echo "  ⏳ Restauration des applications et navigateurs..."
+  restic restore latest --target / \
+    --include "$HOME/.config/sunshine" \
+    --include "$HOME/.config/mozilla/firefox" \
+    --include "$HOME/.thunderbird" \
+    --include "$HOME/.config/libreoffice" \
+    --include "$HOME/.config/calibre" \
+    --include "$HOME/.local/share/sigil-ebook" 2>/dev/null || echo "⚠️  Certains fichiers utilisateurs n'ont pas pu être restaurés."
+
+  # Restauration des fichiers système (Nécessite sudo. On préserve l'environnement pour garder le mot de passe et le repo restic)
+  echo "  ⏳ Restauration des clés Bluetooth et de la VM..."
+  export NOM_VM="win11"
+  sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic restore latest --target / \
+    --include "/var/lib/bluetooth" \
+    --include "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
+    --include "/etc/libvirt/qemu/${NOM_VM}.xml" 2>/dev/null || echo "⚠️  Certains fichiers systèmes n'ont pas pu être restaurés."
+
+  sudo systemctl restart bluetooth
+  echo "  ✅ Restauration Restic terminée !"
+fi
 
 # ─── 12. Préparation des Mounts & VM ────────────────────────────────────────
 echo ""
@@ -254,14 +269,14 @@ sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm "$USER"
 
-export NOM_VM="win11"
-if [[ -f "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2" ]]; then
-  echo "🪟 Restauration de la Machine Virtuelle Windows 11 (qcow2)..."
-  sudo cp "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2" /var/lib/libvirt/images/
-  sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2"
-  sudo chmod 644 "/var/lib/libvirt/images/${NOM_VM}.qcow2"
-  sudo virsh define "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" 2>/dev/null || true
-  echo "  ✅ VM Windows 11 définie dans KVM"
+# Définition de la VM directement depuis le XML restauré par Restic dans /etc/libvirt/qemu
+if [ -f "/etc/libvirt/qemu/${NOM_VM}.xml" ]; then
+  echo "🪟 Enregistrement de la Machine Virtuelle Windows 11 dans KVM..."
+  # On s'assure que les droits sont corrects sur le disque qcow2 restauré
+  sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
+  sudo chmod 644 "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
+  sudo virsh define "/etc/libvirt/qemu/${NOM_VM}.xml" 2>/dev/null || true
+  echo "  ✅ VM définie avec succès."
 fi
 
 # ─── 13. Shell par défaut ───────────────────────────────────────────────────
@@ -278,5 +293,4 @@ echo "========================================================="
 echo "Dernières actions manuelles :"
 echo "1. Ajoutez le contenu de /tmp/fstab_append.txt à votre /etc/fstab (sudo nvim /etc/fstab)"
 echo "2. Déconnectez puis reconnectez votre session utilisateur (Requis pour libvirt, clavier et extensions)"
-echo "3. Lancez 'source ~/.zshrc'"
-echo "4. Une fois reconnecté, exécutez le script './post_relog.sh' pour activer vos extensions GNOME."
+echo "3. Une fois reconnecté, exécutez le script './post_relog.sh' pour activer vos extensions GNOME."
