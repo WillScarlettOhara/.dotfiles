@@ -3,7 +3,7 @@
 
 set -e
 
-BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
+BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
 # Restic Repository
@@ -25,7 +25,6 @@ log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
 BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
 if [ "$BW_STATUS" = "locked" ] || [ "$BW_STATUS" = "unauthenticated" ]; then
   log "⚠️  Bitwarden est verrouillé. Veuillez le déverrouiller :"
-  # CORRECTION SC2155 : Déclaration et assignation séparées
   export BW_SESSION
   BW_SESSION=$(bw unlock --raw)
 fi
@@ -114,7 +113,6 @@ else
   USER_TARGETS+=("$HOME/.thunderbird")
 fi
 
-# Lancement de la sauvegarde Restic pour l'utilisateur
 if restic backup "${USER_TARGETS[@]}" --exclude-file="$EXCLUDES_FILE" >>"$LOG_FILE" 2>&1; then
   log "  ✅ Données Utilisateurs sauvegardées (Dédupliquées !)"
 else
@@ -127,23 +125,18 @@ log "🖥️  Sauvegarde de la Machine Virtuelle win11..."
 NOM_VM="win11"
 VM_XML="/tmp/${NOM_VM}.xml"
 
-# CORRECTION SC2024 : Redirection gérée par 'tee' sans sudo sur le chevron
 sudo virsh dumpxml "$NOM_VM" 2>/dev/null | tee "$VM_XML" >/dev/null || true
 
 log "  Copie incrémentale du disque qcow2 (Déduplication Restic)..."
 
-# On désactive brièvement l'arrêt sur erreur (set -e) pour capturer PIPESTATUS proprement
 set +e
 
-# CORRECTION SC2024 : Au lieu de >> "$LOG_FILE", on passe par | tee -a
 sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
   "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
   "$VM_XML" 2>&1 | tee -a "$LOG_FILE" >/dev/null
 
-# PIPESTATUS[0] stocke le code de retour de la commande restic (avant le pipe vers tee)
 VM_BKP_STATUS=${PIPESTATUS[0]}
 
-# On réactive la sécurité
 set -e
 
 if [ "$VM_BKP_STATUS" -eq 0 ]; then
@@ -152,7 +145,6 @@ else
   log "  ⚠️  Erreurs sur la VM (voir log)"
 fi
 
-# Nettoyage
 rm -f "$EXCLUDES_FILE" "$VM_XML"
 
 log ""
