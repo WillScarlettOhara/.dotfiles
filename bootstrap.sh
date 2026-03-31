@@ -252,31 +252,44 @@ else
   echo "  ✅ Restauration Restic terminée !"
 fi
 
-# --- 11.5 Préparation des drivers VirtIO ---------------------------------------
-VIRTIO_PATH="/var/lib/libvirt/images/virtio-win.iso"
-if [ ! -f "$VIRTIO_PATH" ]; then
-  echo "💿 Téléchargement des drivers VirtIO (stable)..."
-  sudo wget -q https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O "$VIRTIO_PATH"
-  sudo chmod 644 "$VIRTIO_PATH"
-  echo "  ✅ ISO VirtIO installée."
-fi
-
-# ─── 12. Préparation des Mounts & VM ────────────────────────────────────────
+# ─── 12. Préparation de l'Hyperviseur et des Mounts ──────────────────────────
 echo ""
 echo "🖥️  Préparation de l'Hyperviseur et des Mounts..."
-sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/2TB /mnt/samba/data ~/Partage
 
+# 1. Création des répertoires de base
+sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/1TB /mnt/2TB /mnt/samba/data
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 
+# 2. Téléchargement de l'ISO VirtIO (Indispensable pour ta VM Windows)
+VIRTIO_ISO="/var/lib/libvirt/images/virtio-win.iso"
+if [ ! -f "$VIRTIO_ISO" ]; then
+  echo "💿 ISO VirtIO manquante. Téléchargement..."
+  sudo wget -q https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O "$VIRTIO_ISO"
+  sudo chmod 644 "$VIRTIO_ISO"
+fi
+
+# 3. Activation des points de montage Systemd
+echo "🔗 Activation des points de montage réseau..."
+sudo systemctl daemon-reload
+NETWORK_MOUNTS=("mnt-calibreweb.mount" "mnt-torrent.mount")
+
+for mnt in "${NETWORK_MOUNTS[@]}"; do
+  if [ -f "/etc/systemd/system/$mnt" ]; then
+    echo "  🔄 Activation et démarrage de $mnt..."
+    sudo systemctl enable --now "$mnt"
+  else
+    echo "  ⚠️ Fichier /etc/systemd/system/$mnt introuvable !"
+  fi
+done
+
+# 4. Configuration Libvirt
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm "$USER"
 
 if [ -f "/etc/libvirt/qemu/${NOM_VM}.xml" ]; then
-  echo "🪟 Enregistrement de la Machine Virtuelle Windows 11 dans KVM..."
+  echo "🪟 Enregistrement de la VM Windows 11..."
   sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
-  sudo chmod 644 "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
   sudo virsh define "/etc/libvirt/qemu/${NOM_VM}.xml" 2>/dev/null || true
-  echo "  ✅ VM définie avec succès."
 fi
 
 # ─── 13. Shell par défaut ───────────────────────────────────────────────────
