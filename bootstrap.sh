@@ -126,8 +126,11 @@ bw sync &>/dev/null
 echo ""
 echo "🗝️  Récupération des clés SSH..."
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
-bw get item "SSH GitHub" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_rsa
-bw get item "SSH GitHub" | jq -r '.sshKey.publicKey // empty' >~/.ssh/id_rsa.pub
+
+# Recherche sûre : On isole l'objet JSON complet correspondant exactement au nom
+BW_SSH_JSON=$(bw list items --search "SSH GitHub" 2>/dev/null | jq -r '.[] | select(.name == "SSH GitHub")')
+echo "$BW_SSH_JSON" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_rsa
+echo "$BW_SSH_JSON" | jq -r '.sshKey.publicKey // empty' >~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
 
 {
@@ -190,17 +193,17 @@ echo ""
 echo "🔐 Récupération des secrets système depuis Bitwarden..."
 
 export RESTIC_PASSWORD
-RESTIC_PASSWORD=$(bw get item "Restic Password" | jq -r '.notes // empty')
+RESTIC_PASSWORD=$(bw list items --search "Restic Password" 2>/dev/null | jq -r '.[] | select(.name == "Restic Password") | .notes // empty')
 
 mkdir -p ~/.config/rclone
-bw get item "Config Rclone" | jq -r '.notes // empty' >~/.config/rclone/rclone.conf
+bw list items --search "Config Rclone" 2>/dev/null | jq -r '.[] | select(.name == "Config Rclone") | .notes // empty' >~/.config/rclone/rclone.conf
 
 sudo mkdir -p /etc/samba
-sudo --preserve-env=BW_SESSION bash -c "bw get item 'Samba Credentials' | jq -r '.notes // empty' > /etc/samba/.credentials"
+sudo --preserve-env=BW_SESSION bash -c "bw list items --search 'Samba Credentials' 2>/dev/null | jq -r '.[] | select(.name == \"Samba Credentials\") | .notes // empty' > /etc/samba/.credentials"
 sudo chmod 600 /etc/samba/.credentials
 
 echo "  📝 Lignes Fstab récupérées :"
-bw get item "Fstab Mounts" | jq -r '.notes // empty' | sudo tee /tmp/fstab_append.txt >/dev/null
+bw list items --search "Fstab Mounts" 2>/dev/null | jq -r '.[] | select(.name == "Fstab Mounts") | .notes // empty' | sudo tee /tmp/fstab_append.txt >/dev/null
 cat /tmp/fstab_append.txt
 
 bw lock &>/dev/null
