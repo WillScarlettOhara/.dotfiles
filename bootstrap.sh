@@ -161,6 +161,9 @@ if [ "$IS_GNOME" = true ]; then
     gnome-extensions install --force /tmp/gjsosk.zip || true
     rm -f /tmp/gjsosk.zip
     echo "  ✅ gjs-osk installé (nécessitera le relog pour s'activer)."
+    sudo pacman -S --noconfirm python-xkbcommon
+    mkdir -p ~/.cache/gjs-osk/keycodes
+    python genKeyMap.py us+qwerty-fr >~/.cache/gjs-osk/keycodes/us+qwerty-fr.json
   else
     echo "  ⚠️ Impossible de trouver la dernière release de gjs-osk."
   fi
