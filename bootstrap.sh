@@ -252,10 +252,20 @@ else
   echo "  ✅ Restauration Restic terminée !"
 fi
 
+# --- 11.5 Préparation des drivers VirtIO ---------------------------------------
+VIRTIO_PATH="/var/lib/libvirt/images/virtio-win.iso"
+if [ ! -f "$VIRTIO_PATH" ]; then
+  echo "💿 Téléchargement des drivers VirtIO (stable)..."
+  sudo wget -q https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O "$VIRTIO_PATH"
+  sudo chmod 644 "$VIRTIO_PATH"
+  echo "  ✅ ISO VirtIO installée."
+fi
+
 # ─── 12. Préparation des Mounts & VM ────────────────────────────────────────
 echo ""
 echo "🖥️  Préparation de l'Hyperviseur et des Mounts..."
-sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/1TB /mnt/2TB /mnt/samba/data
+sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/2TB /mnt/samba/data ~/Partage
+
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 
 sudo systemctl enable --now libvirtd
