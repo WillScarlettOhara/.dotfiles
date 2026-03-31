@@ -1,36 +1,52 @@
 #!/bin/bash
+# save.sh - Sauvegarde unifiée vers Restic (OneDrive) + GitHub + Bitwarden
+
+set -e
 
 BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
-RSYNC_CMD=(rsync -auL --delete --info=progress2)
+# Restic Repository
+export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
 
 log() {
   printf "%s\n" "$1" | tee -a "$LOG_FILE"
 }
 
-run() {
-  local label="$1"
-  shift
-  log "  $label"
-  if "$@" 2>&1 | tee -a "$LOG_FILE" | grep -q "rsync error"; then
-    log "  ⚠️  Erreurs (voir log)"
-  else
-    log "  ✅ OK"
-  fi
-}
-
-mkdir -p "$BACKUP_DIR"/{Scripts_et_Raccourcis,Services_Systemd/User,Services_Systemd/System,Profils_Lourds,Sigil,GJS_OSK,Machines_Virtuelles}
+mkdir -p "$BACKUP_DIR"
 
 log "======================================"
 log "🚀 Démarrage de la sauvegarde : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
 
-# ─── 1. GitHub (Dotfiles Automatiques) ──────────────────────────────────────────
+# ─── 0. Préparation de Restic ──────────────────────────────────────────────────
+log ""
+log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
+BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
+if [ "$BW_STATUS" = "locked" ] || [ "$BW_STATUS" = "unauthenticated" ]; then
+  log "⚠️  Bitwarden est verrouillé. Veuillez le déverrouiller :"
+  # CORRECTION SC2155 : Déclaration et assignation séparées
+  export BW_SESSION
+  BW_SESSION=$(bw unlock --raw)
+fi
+
+export RESTIC_PASSWORD
+RESTIC_PASSWORD=$(bw get item "Restic Password" | jq -r '.notes // empty')
+
+if [ -z "$RESTIC_PASSWORD" ]; then
+  log "❌ Erreur : Mot de passe Restic introuvable !"
+  exit 1
+fi
+
+if ! restic snapshots >/dev/null 2>&1; then
+  log "🆕 Initialisation du dépôt Restic dans $RESTIC_REPOSITORY..."
+  restic init
+fi
+
+# ─── 1. GitHub (Dotfiles Automatiques) ─────────────────────────────────────────
 log ""
 log "🐙 Sauvegarde GitHub des Dotfiles..."
 
-# On met à jour les fichiers "Système" et "Gnome" directement dans le repo avant le commit !
 sudo cp /etc/systemd/system/*.mount "$HOME/.dotfiles/system-mounts/" 2>/dev/null || true
 dconf dump /org/gnome/shell/extensions/gjsosk/ >"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
 
@@ -48,94 +64,100 @@ fi
 
 # ─── 2. Bitwarden (Les Secrets) ────────────────────────────────────────────────
 log ""
-# Appelle ton script Bitwarden pour créer les notes (s'affiche directement à l'écran)
 bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
 
-# ─── 3. OneDrive (La Volumétrie) ───────────────────────────────────────────────
-# CORRECTION : Retour de TOUTES les exclusions Firefox
-log ""
-log "🦊 Firefox (Force Copy)..."
-run "firefox profiles.ini" "${RSYNC_CMD[@]}" \
-  ~/.config/mozilla/firefox/profiles.ini \
-  ~/.config/mozilla/firefox/installs.ini \
-  "$BACKUP_DIR/Profils_Lourds/firefox/"
+# ─── 3. Création des exclusions Restic ─────────────────────────────────────────
+EXCLUDES_FILE="/tmp/restic_excludes.txt"
+cat <<EOF >"$EXCLUDES_FILE"
+cache2
+Cache
+cache
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+minidumps
+crashes
+lock
+.parentlock
+parent.lock
+thumbnails
+sessionstore-backups
+SiteSecurityServiceState.bin
+AlternateServices.bin
+shader-cache
+datareporting
+saved-telemetry-pings
+scheduled-notifications
+session.json
+session.json.backup
+ImapMail
+4/cache
+caches
+Preview-Cache
+EOF
 
-run "firefox profil actif" "${RSYNC_CMD[@]}" \
-  --exclude="cache2/" \
-  --exclude="Cache/" \
-  --exclude="*.sqlite-wal" \
-  --exclude="*.sqlite-shm" \
-  --exclude="*.sqlite-journal" \
-  --exclude="minidumps/" \
-  --exclude="crashes/" \
-  --exclude="lock" \
-  --exclude=".parentlock" \
-  --exclude="thumbnails/" \
-  --exclude="sessionstore-backups/" \
-  --exclude="storage/default/*/cache/**" \
-  --exclude="SiteSecurityServiceState.bin" \
-  --exclude="AlternateServices.bin" \
-  ~/.config/mozilla/firefox/d91w3rmx.default-release-1739246972176/ \
-  "$BACKUP_DIR/Profils_Lourds/firefox/d91w3rmx.default-release-1739246972176/"
-
-# CORRECTION : Retour de TOUTES les exclusions Thunderbird
+# ─── 4. Restic (Sauvegarde Volumétrie Utilisateur) ─────────────────────────────
 log ""
-log "📧 Thunderbird..."
+log "📦 Sauvegarde des profils utilisateurs (Firefox, Thunderbird, Apps)..."
+
+USER_TARGETS=(
+  "$HOME/.config/mozilla/firefox"
+  "$HOME/.config/libreoffice"
+  "$HOME/.config/calibre"
+  "$HOME/.local/share/sigil-ebook"
+  "$HOME/.config/sunshine"
+)
+
 if pgrep -x thunderbird >/dev/null; then
-  log "  ⚠️  Thunderbird est ouvert — sauvegarde ignorée"
+  log "  ⚠️  Thunderbird est ouvert — ignoré de la sauvegarde"
 else
-  run "thunderbird profiles.ini" "${RSYNC_CMD[@]}" \
-    ~/.thunderbird/profiles.ini \
-    ~/.thunderbird/installs.ini \
-    "$BACKUP_DIR/Profils_Lourds/thunderbird/" || true
-
-  run "thunderbird profil actif" "${RSYNC_CMD[@]}" \
-    --exclude="cache/" \
-    --exclude="Cache/" \
-    --exclude="lock" \
-    --exclude="parent.lock" \
-    --exclude="*.sqlite-wal" \
-    --exclude="*.sqlite-shm" \
-    --exclude="shader-cache/" \
-    --exclude="datareporting/" \
-    --exclude="saved-telemetry-pings/" \
-    --exclude="crashes/" \
-    --exclude="minidumps/" \
-    --exclude="scheduled-notifications/" \
-    --exclude="session.json" \
-    --exclude="session.json.backup" \
-    --exclude="ImapMail/**" \
-    ~/.thunderbird/o2dmdq0v.default-release/ \
-    "$BACKUP_DIR/Profils_Lourds/thunderbird/o2dmdq0v.default-release/"
+  USER_TARGETS+=("$HOME/.thunderbird")
 fi
 
-log ""
-log "📚 Autres apps (LibreOffice, Calibre, Sigil)..."
-run "libreoffice" "${RSYNC_CMD[@]}" --exclude='4/cache/' ~/.config/libreoffice "$BACKUP_DIR/Profils_Lourds/"
-run "calibre" "${RSYNC_CMD[@]}" --exclude='caches/' ~/.config/calibre "$BACKUP_DIR/Profils_Lourds/" || true
-run "sigil-ebook" "${RSYNC_CMD[@]}" --exclude='Preview-Cache/' ~/.local/share/sigil-ebook "$BACKUP_DIR/Sigil/" || true
+# Lancement de la sauvegarde Restic pour l'utilisateur
+if restic backup "${USER_TARGETS[@]}" --exclude-file="$EXCLUDES_FILE" >>"$LOG_FILE" 2>&1; then
+  log "  ✅ Données Utilisateurs sauvegardées (Dédupliquées !)"
+else
+  log "  ⚠️  Erreurs Restic (voir log)"
+fi
 
+# ─── 5. Restic (Sauvegarde Machine Virtuelle - ROOT) ───────────────────────────
 log ""
-log "⚙️  Configs App..."
-run "sunshine" "${RSYNC_CMD[@]}" ~/.config/sunshine "$BACKUP_DIR/Configs_App/" || true
-
-log ""
-log "🖥️  Machine Virtuelle win11..."
+log "🖥️  Sauvegarde de la Machine Virtuelle win11..."
 NOM_VM="win11"
-sudo virsh dumpxml "$NOM_VM" | tee "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" >/dev/null
-log "  Copie du disque VM en cours..."
+VM_XML="/tmp/${NOM_VM}.xml"
 
-# shellcheck disable=SC2024
-if sudo "${RSYNC_CMD[@]}" "/var/lib/libvirt/images/${NOM_VM}.qcow2" "$BACKUP_DIR/Machines_Virtuelles/" >>"$LOG_FILE" 2>&1; then
-  sudo chown "$USER:$USER" "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2"
-  log "  ✅ OK"
+# CORRECTION SC2024 : Redirection gérée par 'tee' sans sudo sur le chevron
+sudo virsh dumpxml "$NOM_VM" 2>/dev/null | tee "$VM_XML" >/dev/null || true
+
+log "  Copie incrémentale du disque qcow2 (Déduplication Restic)..."
+
+# On désactive brièvement l'arrêt sur erreur (set -e) pour capturer PIPESTATUS proprement
+set +e
+
+# CORRECTION SC2024 : Au lieu de >> "$LOG_FILE", on passe par | tee -a
+sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
+  "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
+  "$VM_XML" 2>&1 | tee -a "$LOG_FILE" >/dev/null
+
+# PIPESTATUS[0] stocke le code de retour de la commande restic (avant le pipe vers tee)
+VM_BKP_STATUS=${PIPESTATUS[0]}
+
+# On réactive la sécurité
+set -e
+
+if [ "$VM_BKP_STATUS" -eq 0 ]; then
+  log "  ✅ VM Sauvegardée"
 else
-  log "  ⚠️  Erreurs (voir log)"
+  log "  ⚠️  Erreurs sur la VM (voir log)"
 fi
+
+# Nettoyage
+rm -f "$EXCLUDES_FILE" "$VM_XML"
 
 log ""
 log "======================================"
-log "✅ Toutes les sauvegardes (Git, BW, OneDrive) sont terminées !"
-log "📋 Log : $LOG_FILE"
+log "✅ Toutes les sauvegardes (Git, BW, Restic/OneDrive) sont terminées !"
+log "📊 Pour voir les snapshots Restic : restic snapshots"
+log "📋 Log détaillé : $LOG_FILE"
 log "======================================"
-
