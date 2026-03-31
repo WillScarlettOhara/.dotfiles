@@ -1,6 +1,7 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+  typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 fi
 
 if [[ -f "/opt/homebrew/bin/brew" ]]; then
@@ -109,6 +110,10 @@ function zvm_config() {
 zinit light jeffreytse/zsh-vi-mode
 
 # Lancer ou s'attacher à tmux automatiquement au démarrage (TOUJOURS À LA FIN)
-if [[ -z "$TMUX" ]]; then
-  tmux new-session -A -s main || true
+if [[ -z "$TMUX" && -o interactive ]]; then
+  # Tue les sessions orphelines d'un autre shell
+  for s in $(tmux list-sessions -F "#{session_name}:#{session_attached}" 2>/dev/null | grep ":0$" | cut -d: -f1); do
+    tmux kill-session -t "$s" 2>/dev/null
+  done
+  exec tmux new-session -A -s main
 fi
