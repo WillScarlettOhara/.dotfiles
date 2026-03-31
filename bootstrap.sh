@@ -23,7 +23,7 @@ PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
   nodejs npm python jre-openjdk rust luarocks
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
-  neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
+  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine
   xkb-qwerty-fr
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
@@ -43,6 +43,8 @@ else
   sudo pacman -Syu --noconfirm
   sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
 fi
+
+sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 
 echo "⌨️  Configuration automatique du clavier..."
 if [ "$IS_GNOME" = true ]; then
