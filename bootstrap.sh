@@ -8,9 +8,12 @@ echo "======================================"
 echo "🚀 SUPER BOOTSTRAP (Zero-Touch Provisioning)"
 echo "======================================"
 
-# Detection DE (gnome, KDE, hyprland ou autre)
-# if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
-# stocker dans une variable reutilisable plus tard
+# ─── 0. Détection DE (GNOME) ────────────────────────────────────────────────
+IS_GNOME=false
+if [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
+  IS_GNOME=true
+  echo "🖥️  Environnement GNOME détecté."
+fi
 
 # ─── 1. Installation des Paquets ────────────────────────────────────────────
 echo ""
@@ -18,7 +21,7 @@ echo "📦 Installation des paquets du système..."
 
 PACKAGES=(
   # Base et utilitaires cloud
-  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager #gnome-shell-extension-dash-to-panel
+  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
   # Langages et environnements
   nodejs npm python jre-openjdk rust luarocks
   # Terminaux et CLI
@@ -26,10 +29,18 @@ PACKAGES=(
   # Applications lourdes
   neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
   # Claviers spécifiques (AUR)
-  xkb-qwerty-fr #regarder si on peut automatiquement l'activer
+  xkb-qwerty-fr
   # Virtualisation KVM/QEMU (Spécifique Windows 11)
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
+
+if [ "$IS_GNOME" = true ]; then
+  PACKAGES+=(
+    gnome-shell-extension-dash-to-panel
+    gnome-shell-extension-arc-menu
+    gnome-shell-extension-vitals
+  )
+fi
 
 # CachyOS utilise paru par défaut
 if command -v paru &>/dev/null; then
@@ -38,6 +49,16 @@ if command -v paru &>/dev/null; then
 else
   sudo pacman -Syu --noconfirm
   sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
+fi
+
+echo "⌨️  Configuration automatique du clavier..."
+if [ "$IS_GNOME" = true ]; then
+  echo "  🖥️  GNOME détecté : Application de gsettings pour qwerty-fr..."
+  # Applique le clavier pour l'utilisateur courant sous GNOME
+  gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us+qwerty-fr')]" 2>/dev/null || true
+else
+  echo "  🐧 Autre DE détecté : Application via localectl..."
+  sudo localectl set-x11-keymap us pc105 qwerty-fr 2>/dev/null || true
 fi
 
 # ─── 2. Configuration du Pare-feu (Sunshine) ────────────────────────────────
@@ -60,18 +81,15 @@ fi
 install_bitwarden_cli() {
   step "Checking Bitwarden CLI"
 
-  # On garde Node/NVM car c'est utile pour d'autres outils (Neovim/Tree-sitter)
   _setup_node_env
 
   local current_version="0.0.0"
   local latest_version
 
-  # Récupérer la dernière version sur GitHub (API)
   latest_version=$(curl -s "https://api.github.com/repos/bitwarden/clients/releases" |
     jq -r '[.[] | select(.name | contains("CLI"))][0].tag_name' | sed 's/cli-v//' || echo "")
 
   if has bw; then
-    # On vérifie si le binaire répond. S'il crash (WASM error), current_version reste 0.0.0
     current_version=$(NODE_NO_WARNINGS=1 bw --version 2>/dev/null || echo "0.0.0")
 
     if [[ "$current_version" == "$latest_version" && "$current_version" != "0.0.0" ]]; then
@@ -84,17 +102,12 @@ install_bitwarden_cli() {
     fi
   fi
 
-  # Installation ou Mise à jour
   info "Downloading Bitwarden CLI v$latest_version..."
-
-  # Nettoyage préventif des anciens liens/binaires pour éviter les conflits
   $SUDO rm -f /usr/local/bin/bw 2>/dev/null || true
-
   wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
   unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
   $SUDO install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
   rm -rf /tmp/bw.zip /tmp/bw_extract
-
   ok "Bitwarden CLI installed/updated ($(bw --version))"
 }
 
@@ -142,11 +155,25 @@ sudo sh -c "{
   ssh-keyscan REDACTED
 } >> /root/.ssh/known_hosts 2>/dev/null"
 
-# ─── 6. Clone des dotfiles ──────────────────────────────────────────────────
+# ─── 6. Clone des dotfiles & Extensions GNOME ───────────────────────────────
 echo ""
 echo "📂 Clone des dotfiles depuis GitHub..."
 if [[ ! -d "$HOME/.dotfiles" ]]; then
   git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles"
+fi
+
+if [ "$IS_GNOME" = true ]; then
+  echo "⌨️  Installation de gjs-osk (Clavier visuel) pour GNOME..."
+  # On récupère le bon zip pour GNOME 45+
+  GJS_OSK_URL=$(curl -s https://api.github.com/repos/Vishram1123/gjs-osk/releases/latest | jq -r '.assets[] | select(.name == "gjsosk@vishram1123_main.zip") | .browser_download_url')
+  if [ -n "$GJS_OSK_URL" ] && [ "$GJS_OSK_URL" != "null" ]; then
+    wget -q "$GJS_OSK_URL" -O /tmp/gjsosk.zip
+    gnome-extensions install --force /tmp/gjsosk.zip || true
+    rm -f /tmp/gjsosk.zip
+    echo "  ✅ gjs-osk installé (nécessitera le relog pour s'activer)."
+  else
+    echo "  ⚠️ Impossible de trouver la dernière release de gjs-osk."
+  fi
 fi
 
 # ─── 7. Application des dotfiles via stow ───────────────────────────────────
@@ -162,8 +189,14 @@ echo ""
 echo "⚙️  Restauration système (Gnome & Mounts)..."
 sudo cp "$HOME/.dotfiles/system-mounts/"*.mount /etc/systemd/system/ 2>/dev/null || true
 sudo systemctl daemon-reload
-dconf load /org/gnome/shell/extensions/gjsosk/ <"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
-echo "  ✅ Mounts et réglages Gnome restaurés."
+
+if [ "$IS_GNOME" = true ]; then
+  dconf load /org/gnome/shell/extensions/gjsosk/ <"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/dash-to-panel/ <"$HOME/.dotfiles/gnome/dash-to-panel_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/arcmenu/ <"$HOME/.dotfiles/gnome/arcmenu_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/vitals/ <"$HOME/.dotfiles/gnome/vitals_settings.ini" 2>/dev/null || true
+  echo "  ✅ Paramètres des extensions GNOME restaurés."
+fi
 
 # ─── 9. Récupération des Secrets Système (Bitwarden) ────────────────────────
 echo ""
@@ -178,7 +211,6 @@ sudo chmod 600 /etc/samba/.credentials
 echo "  📝 Lignes Fstab récupérées :"
 bw get item "Fstab Mounts" | jq -r '.notes // empty' | sudo tee /tmp/fstab_append.txt >/dev/null
 cat /tmp/fstab_append.txt
-echo "  (Ces lignes sont prêtes dans /tmp/fstab_append.txt)."
 
 bw lock &>/dev/null
 
@@ -191,7 +223,6 @@ systemctl --user enable --now rclone-onedrive.service
 echo "  ⏳ Attente de la connexion à OneDrive..."
 BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
 
-# SC1069 totalement éradiqué (Espace ajouté après while et après [)
 while [ ! -d "$BACKUP_DIR" ]; do
   sleep 2
   echo -n "."
@@ -203,11 +234,9 @@ echo ""
 echo "🔄 Restauration des profils lourds depuis OneDrive..."
 RSYNC_CMD=(rsync -aL --info=progress2)
 
-# Bluetooth
 sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Secrets/bluetooth/" /var/lib/bluetooth/ 2>/dev/null || true
 sudo systemctl restart bluetooth
 
-# Navigateurs et Apps Lourdes
 mkdir -p ~/.config/mozilla/firefox ~/.thunderbird ~/.config/sunshine
 "${RSYNC_CMD[@]}" "$BACKUP_DIR/Configs_App/sunshine/" ~/.config/sunshine/ 2>/dev/null || true
 "${RSYNC_CMD[@]}" "$BACKUP_DIR/Profils_Lourds/firefox/" ~/.config/mozilla/firefox/ 2>/dev/null || true
@@ -222,9 +251,7 @@ echo "🖥️  Préparation de l'Hyperviseur et des Mounts..."
 sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/1TB /mnt/2TB /mnt/samba/data
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 
-# Activation du service de virtualisation (Requis par virt-manager/virsh)
 sudo systemctl enable --now libvirtd
-# Ajout de l'utilisateur aux groupes de virtualisation pour ne pas taper sudo tout le temps
 sudo usermod -aG libvirt,kvm "$USER"
 
 export NOM_VM="win11"
@@ -243,7 +270,6 @@ echo "🐚 Configuration de zsh comme shell par défaut..."
 ZSH_PATH=$(which zsh)
 grep -qxF "$ZSH_PATH" /etc/shells || echo "$ZSH_PATH" | sudo tee -a /etc/shells
 chsh -s "$ZSH_PATH"
-echo "  ✅ Shell par défaut : zsh (effectif à la prochaine session)"
 
 echo ""
 echo "========================================================="
@@ -251,5 +277,6 @@ echo "🎉 RESTAURATION TOTALE TERMINÉE AVEC SUCCÈS !"
 echo "========================================================="
 echo "Dernières actions manuelles :"
 echo "1. Ajoutez le contenu de /tmp/fstab_append.txt à votre /etc/fstab (sudo nvim /etc/fstab)"
-echo "2. Déconnectez puis reconnectez votre session utilisateur (pour les droits KVM/libvirt)"
+echo "2. Déconnectez puis reconnectez votre session utilisateur (Requis pour libvirt, clavier et extensions)"
 echo "3. Lancez 'source ~/.zshrc'"
+echo "4. Une fois reconnecté, exécutez le script './post_relog.sh' pour activer vos extensions GNOME."
