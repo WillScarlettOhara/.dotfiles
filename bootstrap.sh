@@ -10,7 +10,7 @@ echo "======================================"
 
 # ─── 0. Détection DE (GNOME) ────────────────────────────────────────────────
 IS_GNOME=false
-if [[ "${XDG_CURRENT_DESKTOP^^}" = *"GNOME"* ]] || [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
+if [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
   IS_GNOME=true
   echo "🖥️  Environnement GNOME détecté."
 fi
@@ -20,17 +20,11 @@ echo ""
 echo "📦 Installation des paquets du système..."
 
 PACKAGES=(
-  # Base et utilitaires cloud
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
-  # Langages et environnements
   nodejs npm python jre-openjdk rust luarocks
-  # Terminaux et CLI
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
-  # Applications lourdes
   neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
-  # Claviers spécifiques (AUR)
   xkb-qwerty-fr
-  # Virtualisation KVM/QEMU (Spécifique Windows 11)
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
 
@@ -42,7 +36,6 @@ if [ "$IS_GNOME" = true ]; then
   )
 fi
 
-# CachyOS utilise paru par défaut
 if command -v paru &>/dev/null; then
   paru -Syu --noconfirm
   paru -S --needed --noconfirm "${PACKAGES[@]}"
@@ -152,7 +145,6 @@ sudo sh -c "{
 echo ""
 echo "📂 Clone des dotfiles depuis GitHub..."
 if [ ! -d "$HOME/.dotfiles" ]; then
-  # Vu que ton repo sera public, tu pourrais utiliser https, mais ssh marche très bien ici.
   git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles"
 fi
 
@@ -195,7 +187,6 @@ fi
 echo ""
 echo "🔐 Récupération des secrets système depuis Bitwarden..."
 
-# Récupération mot de passe Restic (à stocker dans les notes d'un item Bitwarden nommé "Restic Password")
 export RESTIC_PASSWORD
 RESTIC_PASSWORD=$(bw get item "Restic Password" | jq -r '.notes // empty')
 
@@ -219,7 +210,7 @@ systemctl --user daemon-reload
 systemctl --user enable --now rclone-onedrive.service
 
 echo "  ⏳ Attente de la connexion à OneDrive..."
-BACKUP_DIR="$HOME/OneDrive/Linux_Backup_2026"
+BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 
 while [ ! -d "$BACKUP_DIR" ]; do
   sleep 2
@@ -231,14 +222,11 @@ echo " ✅ OneDrive connecté !"
 echo ""
 echo "🔄 Restauration des profils lourds via Restic..."
 
-# On pointe vers le dossier restic contenu sur ton OneDrive monté.
-# (Exemple de chemin : ~/OneDrive/Linux_Backup_2026/restic-repo)
 export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
 
 if [ -z "$RESTIC_PASSWORD" ]; then
   echo "❌ Erreur : Mot de passe Restic introuvable dans Bitwarden."
 else
-  # Restauration des fichiers utilisateurs (Ciblés vers la racine / car restic stocke les chemins absolus)
   echo "  ⏳ Restauration des applications et navigateurs..."
   restic restore latest --target / \
     --include "$HOME/.config/sunshine" \
@@ -248,7 +236,6 @@ else
     --include "$HOME/.config/calibre" \
     --include "$HOME/.local/share/sigil-ebook" 2>/dev/null || echo "⚠️  Certains fichiers utilisateurs n'ont pas pu être restaurés."
 
-  # Restauration des fichiers système (Nécessite sudo. On préserve l'environnement pour garder le mot de passe et le repo restic)
   echo "  ⏳ Restauration des clés Bluetooth et de la VM..."
   export NOM_VM="win11"
   sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic restore latest --target / \
@@ -269,10 +256,8 @@ sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm "$USER"
 
-# Définition de la VM directement depuis le XML restauré par Restic dans /etc/libvirt/qemu
 if [ -f "/etc/libvirt/qemu/${NOM_VM}.xml" ]; then
   echo "🪟 Enregistrement de la Machine Virtuelle Windows 11 dans KVM..."
-  # On s'assure que les droits sont corrects sur le disque qcow2 restauré
   sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
   sudo chmod 644 "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
   sudo virsh define "/etc/libvirt/qemu/${NOM_VM}.xml" 2>/dev/null || true
