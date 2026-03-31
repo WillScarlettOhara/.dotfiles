@@ -23,7 +23,7 @@ PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
   nodejs npm python jre-openjdk rust luarocks
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
-  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine
+  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine discord
   xkb-qwerty-fr
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
@@ -33,6 +33,8 @@ if [ "$IS_GNOME" = true ]; then
     gnome-shell-extension-dash-to-panel
     gnome-shell-extension-arc-menu
     gnome-shell-extension-vitals
+    gnome-shell-extension-appindicator
+    gnome-shell-extension-copyous
   )
 fi
 

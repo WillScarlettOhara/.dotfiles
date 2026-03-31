@@ -8,5 +8,7 @@ gnome-extensions enable dash-to-panel@jderose9.github.com
 gnome-extensions enable arcmenu@arcmenu.com
 gnome-extensions enable Vitals@CoreCoding.com
 gnome-extensions enable gjsosk@vishram1123.com
+gnome-extensions enable copyous@boerdereinar.dev
+gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
 
 echo "✅ Toutes les extensions ont été activées !"
