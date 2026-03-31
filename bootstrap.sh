@@ -8,13 +8,17 @@ echo "======================================"
 echo "🚀 SUPER BOOTSTRAP (Zero-Touch Provisioning)"
 echo "======================================"
 
+# Detection DE (gnome, KDE, hyprland ou autre)
+# if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
+# stocker dans une variable reutilisable plus tard
+
 # ─── 1. Installation des Paquets ────────────────────────────────────────────
 echo ""
 echo "📦 Installation des paquets du système..."
 
 PACKAGES=(
   # Base et utilitaires cloud
-  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard
+  base-devel jq stow git openssh sshfs unzip wget rclone curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager #gnome-shell-extension-dash-to-panel
   # Langages et environnements
   nodejs npm python jre-openjdk rust luarocks
   # Terminaux et CLI
@@ -22,15 +26,17 @@ PACKAGES=(
   # Applications lourdes
   neovim mpv firefox thunderbird libreoffice-fresh calibre sigil sunshine
   # Claviers spécifiques (AUR)
-  xkb-qwerty-fr
+  xkb-qwerty-fr #regarder si on peut automatiquement l'activer
   # Virtualisation KVM/QEMU (Spécifique Windows 11)
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
 
 # CachyOS utilise paru par défaut
 if command -v paru &>/dev/null; then
+  paru -Syu --noconfirm
   paru -S --needed --noconfirm "${PACKAGES[@]}"
 else
+  sudo pacman -Syu --noconfirm
   sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
 fi
 
@@ -165,7 +171,8 @@ echo "🔐 Récupération des secrets système depuis Bitwarden..."
 mkdir -p ~/.config/rclone
 bw get item "Config Rclone" | jq -r '.notes // empty' >~/.config/rclone/rclone.conf
 
-sudo bash -c "bw get item 'Samba Credentials' | jq -r '.notes // empty' > /etc/samba/.credentials"
+sudo mkdir -p /etc/samba
+sudo --preserve-env=BW_SESSION bash -c "bw get item 'Samba Credentials' | jq -r '.notes // empty' > /etc/samba/.credentials"
 sudo chmod 600 /etc/samba/.credentials
 
 echo "  📝 Lignes Fstab récupérées :"
@@ -194,7 +201,7 @@ echo " ✅ OneDrive connecté !"
 # ─── 11. Restauration depuis OneDrive (Uniquement la volumétrie) ────────────
 echo ""
 echo "🔄 Restauration des profils lourds depuis OneDrive..."
-RSYNC_CMD=(rsync -auL --info=progress2)
+RSYNC_CMD=(rsync -aL --info=progress2)
 
 # Bluetooth
 sudo "${RSYNC_CMD[@]}" "$BACKUP_DIR/Secrets/bluetooth/" /var/lib/bluetooth/ 2>/dev/null || true
@@ -229,6 +236,14 @@ if [[ -f "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.qcow2" ]]; then
   sudo virsh define "$BACKUP_DIR/Machines_Virtuelles/${NOM_VM}.xml" 2>/dev/null || true
   echo "  ✅ VM Windows 11 définie dans KVM"
 fi
+
+# ─── 13. Shell par défaut ───────────────────────────────────────────────────
+echo ""
+echo "🐚 Configuration de zsh comme shell par défaut..."
+ZSH_PATH=$(which zsh)
+grep -qxF "$ZSH_PATH" /etc/shells || echo "$ZSH_PATH" | sudo tee -a /etc/shells
+chsh -s "$ZSH_PATH"
+echo "  ✅ Shell par défaut : zsh (effectif à la prochaine session)"
 
 echo ""
 echo "========================================================="
