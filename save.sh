@@ -29,11 +29,12 @@ if [ "$BW_STATUS" = "locked" ] || [ "$BW_STATUS" = "unauthenticated" ]; then
   BW_SESSION=$(bw unlock --raw)
 fi
 
+# Extraction précise avec jq (Ignore les erreurs de déchiffrement parasites)
 export RESTIC_PASSWORD
-RESTIC_PASSWORD=$(bw get item "Restic Password" | jq -r '.notes // empty')
+RESTIC_PASSWORD=$(bw list items --search "Restic Password" 2>/dev/null | jq -r '.[] | select(.name == "Restic Password") | .notes // empty')
 
 if [ -z "$RESTIC_PASSWORD" ]; then
-  log "❌ Erreur : Mot de passe Restic introuvable !"
+  log "❌ Erreur : Mot de passe Restic introuvable ! Vérifiez le nom exact dans Bitwarden."
   exit 1
 fi
 
@@ -130,13 +131,11 @@ sudo virsh dumpxml "$NOM_VM" 2>/dev/null | tee "$VM_XML" >/dev/null || true
 log "  Copie incrémentale du disque qcow2 (Déduplication Restic)..."
 
 set +e
-
 sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
   "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
   "$VM_XML" 2>&1 | tee -a "$LOG_FILE" >/dev/null
 
 VM_BKP_STATUS=${PIPESTATUS[0]}
-
 set -e
 
 if [ "$VM_BKP_STATUS" -eq 0 ]; then
