@@ -2,6 +2,7 @@
 # save.sh - Sauvegarde unifiée vers Restic (OneDrive) + GitHub + Bitwarden
 
 set -e
+export NODE_NO_WARNINGS=1
 
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
@@ -19,31 +20,59 @@ log "======================================"
 log "🚀 Démarrage de la sauvegarde : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
 
-# ─── 0. Préparation de Restic ──────────────────────────────────────────────────
-log ""
-log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
-BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
-if [ "$BW_STATUS" = "locked" ] || [ "$BW_STATUS" = "unauthenticated" ]; then
-  log "⚠️  Bitwarden est verrouillé. Veuillez le déverrouiller :"
-  export BW_SESSION
-  BW_SESSION=$(bw unlock --raw)
+# ─── 0. Vérification des prérequis ─────────────────────────────────────────────
+if ! command -v restic &>/dev/null || ! command -v jq &>/dev/null; then
+  log "📦 Installation des outils manquants (restic / jq)..."
+  if command -v paru &>/dev/null; then
+    paru -S --noconfirm --needed restic jq >/dev/null
+  else
+    sudo pacman -S --noconfirm --needed restic jq >/dev/null
+  fi
+  log "  ✅ Outils installés."
 fi
 
-# Extraction précise avec jq (Ignore les erreurs de déchiffrement parasites)
+# ─── 1. Préparation de Restic & Bitwarden ──────────────────────────────────────
+log ""
+log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
+
+BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
+
+if [ "$BW_STATUS" = "unauthenticated" ]; then
+  log "🔑 Connexion à Bitwarden..."
+  bw login </dev/tty
+  BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null)
+fi
+
+if [ "$BW_STATUS" = "locked" ]; then
+  log "⚠️  Bitwarden est verrouillé."
+  echo -n "🔓 Entrez votre mot de passe maître : " >/dev/tty
+  read -s -r BW_PASS </dev/tty
+  echo "" >/dev/tty
+  export BW_PASS
+  export BW_SESSION
+  BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
+  unset BW_PASS
+fi
+
+log "  🔄 Synchronisation du coffre..."
+bw sync --session "$BW_SESSION" >/dev/null 2>&1
+
 export RESTIC_PASSWORD
-RESTIC_PASSWORD=$(bw list items --search "Restic Password" 2>/dev/null | jq -r '.[] | select(.name == "Restic Password") | .notes // empty')
+# Utilisation de --session explicite + tolérance (notes ou login.password)
+RESTIC_PASSWORD=$(bw list items --search "Restic Password" --session "$BW_SESSION" 2>/dev/null | jq -r '.[] | select(.name == "Restic Password") | (.notes // .login.password // empty)')
 
 if [ -z "$RESTIC_PASSWORD" ]; then
   log "❌ Erreur : Mot de passe Restic introuvable ! Vérifiez le nom exact dans Bitwarden."
   exit 1
 fi
+log "  ✅ Mot de passe Restic récupéré."
 
 if ! restic snapshots >/dev/null 2>&1; then
   log "🆕 Initialisation du dépôt Restic dans $RESTIC_REPOSITORY..."
   restic init
 fi
 
-# ─── 1. GitHub (Dotfiles Automatiques) ─────────────────────────────────────────
+# ─── 2. GitHub (Dotfiles Automatiques) ─────────────────────────────────────────
 log ""
 log "🐙 Sauvegarde GitHub des Dotfiles..."
 
@@ -62,11 +91,11 @@ else
   fi
 fi
 
-# ─── 2. Bitwarden (Les Secrets) ────────────────────────────────────────────────
+# ─── 3. Bitwarden (Les Secrets) ────────────────────────────────────────────────
 log ""
 bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
 
-# ─── 3. Création des exclusions Restic ─────────────────────────────────────────
+# ─── 4. Création des exclusions Restic ─────────────────────────────────────────
 EXCLUDES_FILE="/tmp/restic_excludes.txt"
 cat <<EOF >"$EXCLUDES_FILE"
 cache2
@@ -96,7 +125,7 @@ caches
 Preview-Cache
 EOF
 
-# ─── 4. Restic (Sauvegarde Volumétrie Utilisateur) ─────────────────────────────
+# ─── 5. Restic (Sauvegarde Volumétrie Utilisateur) ─────────────────────────────
 log ""
 log "📦 Sauvegarde des profils utilisateurs (Firefox, Thunderbird, Apps)..."
 
@@ -120,7 +149,7 @@ else
   log "  ⚠️  Erreurs Restic (voir log)"
 fi
 
-# ─── 5. Restic (Sauvegarde Machine Virtuelle - ROOT) ───────────────────────────
+# ─── 6. Restic (Sauvegarde Machine Virtuelle - ROOT) ───────────────────────────
 log ""
 log "🖥️  Sauvegarde de la Machine Virtuelle win11..."
 NOM_VM="win11"
@@ -131,11 +160,13 @@ sudo virsh dumpxml "$NOM_VM" 2>/dev/null | tee "$VM_XML" >/dev/null || true
 log "  Copie incrémentale du disque qcow2 (Déduplication Restic)..."
 
 set +e
+
 sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
   "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
   "$VM_XML" 2>&1 | tee -a "$LOG_FILE" >/dev/null
 
 VM_BKP_STATUS=${PIPESTATUS[0]}
+
 set -e
 
 if [ "$VM_BKP_STATUS" -eq 0 ]; then
