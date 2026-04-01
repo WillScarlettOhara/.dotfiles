@@ -19,45 +19,45 @@ return {
           {
             icon = " ",
             key = "f",
-            desc = "Trouver Fichier",
+            desc = "Trouver [f]ichier",
             action = ":lua Snacks.dashboard.pick('files')",
           },
-          { icon = " ", key = "n", desc = "Nouveau Fichier", action = ":ene | startinsert" },
+          { icon = " ", key = "n", desc = "[n]ouveau Fichier", action = ":ene | startinsert" },
           {
             icon = " ",
             key = "g",
-            desc = "Rechercher Texte",
+            desc = "[g]rep dans '" .. vim.fn.fnamemodify(vim.fn.getcwd(), ":t") .. "'",
             action = ":lua Snacks.dashboard.pick('live_grep')",
           },
           {
             icon = " ",
             key = "r",
-            desc = "Fichiers Récents",
+            desc = "Fichiers [r]écents",
             action = ":lua Snacks.dashboard.pick('oldfiles')",
           },
           {
             icon = " ",
             key = "p",
-            desc = "Projets",
+            desc = "[p]rojets",
             action = ":lua Snacks.dashboard.pick('projects')",
           },
-          { icon = " ", key = "G", desc = "Lazygit", action = ":lua Snacks.lazygit()" },
+          { icon = " ", key = "G", desc = "Lazy[G]it", action = ":lua Snacks.lazygit()" },
           {
             icon = " ",
             key = "c",
-            desc = "Configuration (Fichiers)",
+            desc = "Neovim files [c]onfig",
             action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})",
           },
           {
             icon = "󰱽 ",
             key = "C",
-            desc = "Configuration (Grep)",
+            desc = "Neovim [C]onfig (Grep)",
             action = ":lua Snacks.dashboard.pick('live_grep', {cwd = vim.fn.stdpath('config')})",
           },
-          { icon = " ", key = "s", desc = "Restaurer Auto-Session", action = ":SessionRestore" },
-          { icon = "󰒲 ", key = "L", desc = "Menu Lazy (Plugins)", action = ":Lazy" },
-          { icon = "󰏖 ", key = "m", desc = "Menu Mason (LSP)", action = ":Mason" },
-          { icon = " ", key = "q", desc = "Quitter Neovim", action = ":qa" },
+          { icon = " ", key = "s", desc = "Restaurer [s]ession", action = ":SessionRestore" },
+          { icon = "󰒲 ", key = "L", desc = "Menu [L]azy (Plugins)", action = ":Lazy" },
+          { icon = "󰏖 ", key = "m", desc = "Menu [m]ason (LSP)", action = ":Mason" },
+          { icon = " ", key = "q", desc = "[q]uitter Neovim", action = ":qa" },
         },
       },
       sections = {
@@ -805,6 +805,19 @@ return {
             Snacks.dashboard()
           end
         end)
+      end,
+    })
+    -- 🎨 LA MAGIE : Colorer les raccourcis [x] et les 'dossiers' dans le Dashboard !
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "SnacksDashboardOpened",
+      callback = function()
+        -- On nettoie d'abord les anciennes règles au cas où on recharge le dashboard
+        pcall(vim.fn.clearmatches)
+        -- On applique nos couleurs avec une priorité de 100 pour écraser le jaune par défaut !
+        -- 1. Colorie [x] avec la couleur Rouge (SnacksDashboardKey)
+        vim.fn.matchadd("SnacksDashboardKey", "\\[.\\]", 100)
+        -- 2. Colorie 'dossier' avec la couleur Bleue (SnacksDashboardIcon)
+        vim.fn.matchadd("SnacksDashboardIcon", "'.\\{-}'", 100)
       end,
     })
     vim.api.nvim_create_autocmd("User", {

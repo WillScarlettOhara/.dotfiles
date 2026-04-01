@@ -1,26 +1,3 @@
-local hl = vim.api.nvim_set_hl
-
--- Snacks indentline
-hl(0, "SnacksIndent1", { fg = "#ea6962" })
-hl(0, "SnacksIndent2", { fg = "#d8a657" })
-hl(0, "SnacksIndent3", { fg = "#458588" })
-hl(0, "SnacksIndent4", { fg = "#8ec07c" })
-hl(0, "SnacksIndent5", { fg = "#d3869b" })
-hl(0, "SnacksIndent6", { fg = "#e78a4e" })
-hl(0, "SnacksIndent7", { fg = "#83a598" })
-
--- Snacks picker
-hl(0, "SnacksPickerDir", { fg = "#928374" })
-
--- Rainbow delimiters
-hl(0, "RainbowDelimiter1", { fg = "#ea6962" })
-hl(0, "RainbowDelimiter2", { fg = "#d8a657" })
-hl(0, "RainbowDelimiter3", { fg = "#458588" })
-hl(0, "RainbowDelimiter4", { fg = "#8ec07c" })
-hl(0, "RainbowDelimiter5", { fg = "#d3869b" })
-hl(0, "RainbowDelimiter6", { fg = "#e78a4e" })
-hl(0, "RainbowDelimiter7", { fg = "#83a598" })
-
 return {
   {
     "sainnhe/gruvbox-material",
@@ -38,7 +15,34 @@ return {
       vim.g.gruvbox_material_enable_italic = 1
       vim.g.gruvbox_material_diagnostic_virtual_text = "colored"
       vim.cmd("colorscheme gruvbox-material")
-      vim.api.nvim_set_hl(0, "SnacksDashboardHeader", { fg = "#83a598", bold = true })
+      local hl = vim.api.nvim_set_hl
+
+      -- Dashboard
+      hl(0, "SnacksDashboardHeader", { fg = "#83A598", bold = true })
+      hl(0, "SnacksDashboardKey", { fg = "#FABD2F", bold = true })
+      hl(0, "SnacksDashboardIcon", { fg = "#B8BB26" })
+      hl(0, "SnacksDashboardDesc", { fg = "#ebdbb2" })
+
+      -- Snacks indentline (Arc-en-ciel fidèle à l'image)
+      hl(0, "SnacksIndent1", { fg = "#FB4934" }) -- red
+      hl(0, "SnacksIndent2", { fg = "#FE8019" }) -- orange
+      hl(0, "SnacksIndent3", { fg = "#FABD2F" }) -- yellow
+      hl(0, "SnacksIndent4", { fg = "#B8BB26" }) -- green
+      hl(0, "SnacksIndent5", { fg = "#8EC07C" }) -- aqua
+      hl(0, "SnacksIndent6", { fg = "#83A598" }) -- blue
+      hl(0, "SnacksIndent7", { fg = "#D3869B" }) -- purple
+
+      -- Snacks picker
+      hl(0, "SnacksPickerDir", { fg = "#928374" }) -- grey1
+
+      -- Rainbow delimiters (Arc-en-ciel fidèle à l'image)
+      hl(0, "RainbowDelimiter1", { fg = "#FB4934" }) -- red
+      hl(0, "RainbowDelimiter2", { fg = "#FE8019" }) -- orange
+      hl(0, "RainbowDelimiter3", { fg = "#FABD2F" }) -- yellow
+      hl(0, "RainbowDelimiter4", { fg = "#B8BB26" }) -- green
+      hl(0, "RainbowDelimiter5", { fg = "#8EC07C" }) -- aqua
+      hl(0, "RainbowDelimiter6", { fg = "#83A598" }) -- blue
+      hl(0, "RainbowDelimiter7", { fg = "#D3869B" }) -- purple
     end,
   },
 }
