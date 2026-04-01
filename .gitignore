@@ -4,4 +4,3 @@
 local-apps/.local/share/applications/wine*
 local-apps/.local/share/applications/mimeinfo.cache
 local-bin/.local/bin/bw
-/reminder.txt

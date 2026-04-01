@@ -1,0 +1,7 @@
+ sudo pacman -S --needed sassc gnome-themes-extra
+git clone https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme.git /tmp/gruvbox-gtk
+cd /tmp/gruvbox-gtk/themes
+ ./install.sh -c dark -l --tweaks macos
+ gsettings set org.gnome.desktop.interface gtk-theme "Gruvbox-Dark"
+
+
