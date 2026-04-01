@@ -1,12 +1,11 @@
 [Unit]
 Description=RClone OneDrive (Files on Demand)
-# On retire network-online.target qui est inefficace en mode 'user'
+After=graphical-session.target
+Wants=graphical-session.target
 
 [Service]
-# Le vrai secret est ici : Systemd va attendre le signal de Rclone
 Type=notify
-
-# On retire le sleep 15 qui ne sert plus à rien
+ExecStartPre=/bin/bash -c 'fusermount3 -uz %h/OneDrive 2>/dev/null || true'
 ExecStartPre=/usr/bin/mkdir -p %h/OneDrive
 
 ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
@@ -21,7 +20,7 @@ ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
   --vfs-fast-fingerprint \
   --onedrive-delta \
   --vfs-refresh \
-  --user-agent "ISV|rclone.org|rclone/v1.69.1" \
+  --user-agent "ISV|rclone.org|rclone/v1.73.3" \
   --no-checksum \
   --no-modtime \
   --transfers 4 \
@@ -35,10 +34,8 @@ ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
 
 ExecStop=/bin/fusermount3 -u %h/OneDrive
 
-# On passe sur "always". Si le réseau n'est pas prêt au boot, Rclone plantera,
-# mais Systemd réessaiera en boucle toutes les 10 secondes jusqu'à ce que le Wi-Fi/Ethernet soit là !
 Restart=always
 RestartSec=10
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
