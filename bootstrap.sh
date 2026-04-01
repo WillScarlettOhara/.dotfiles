@@ -27,7 +27,7 @@ PACKAGES=(
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
   neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine
   discord element-desktop
-  xkb-qwerty-fr
+  xkb-qwerty-fr hunspell-en_gb hunspell-fr-comprehensive
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
 
