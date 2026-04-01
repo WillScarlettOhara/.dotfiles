@@ -311,6 +311,83 @@ STUB
   fi
 fi
 
+# ─── 15. Stremio (AUR + patch CEF) ──────────────────────────────────────────
+echo ""
+echo "🎬 Installation de Stremio..."
+
+install_stremio() {
+  local dir="/tmp/stremio"
+
+  git clone https://aur.archlinux.org/stremio-linux-shell-git.git "$dir" 2>/dev/null ||
+    git -C "$dir" pull --ff-only
+
+  (
+    cd "$dir"
+
+    # Vérification que le patch n'a pas déjà été appliqué
+    if grep -q "LD_LIBRARY_PATH" PKGBUILD; then
+      echo "  ℹ️  PKGBUILD déjà patché, skip."
+    else
+      python3 /tmp/stremio_patch.py || {
+        echo "  ❌ Patch échoué."
+        exit 1
+      }
+    fi
+
+    makepkg -si --noconfirm
+  )
+}
+
+# Script de patch écrit séparément pour éviter les problèmes de heredoc imbriqués
+cat >/tmp/stremio_patch.py <<'PYEOF'
+import re, pathlib, sys
+
+NEW_PACKAGE = r"""package() {
+  cd "stremio-linux-shell"
+  install -Dm755 "target/release/stremio-linux-shell" "$pkgdir/usr/bin/stremio"
+  install -Dm644 "data/com.stremio.Stremio.desktop" \
+    "$pkgdir/usr/share/applications/com.stremio.Stremio.desktop"
+  sed -i '/^[[:space:]]*DBusActivatable[[:space:]]*=[[:space:]]*true[[:space:]]*$/d' \
+    "$pkgdir/usr/share/applications/com.stremio.Stremio.desktop"
+  install -Dm644 "data/icons/com.stremio.Stremio.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/com.stremio.Stremio.svg"
+  install -Dm644 "data/com.stremio.Stremio.metainfo.xml" \
+    "$pkgdir/usr/share/metainfo/com.stremio.Stremio.metainfo.xml"
+  install -Dm644 /usr/share/licenses/spdx/GPL-3.0-only.txt \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE.txt"
+  install -dm755 "$pkgdir/usr/lib/stremio/cef"
+  cp -r vendor/cef/* "$pkgdir/usr/lib/stremio/cef/"
+  install -dm755 "$pkgdir/usr/lib/stremio"
+  mv "$pkgdir/usr/bin/stremio" "$pkgdir/usr/lib/stremio/stremio-bin"
+  install -Dm644 "data/server.js" "$pkgdir/usr/lib/stremio/server.js"
+  cat > "$pkgdir/usr/bin/stremio" <<'EOF'
+#!/bin/bash
+export LD_LIBRARY_PATH="/usr/lib/stremio/cef:$LD_LIBRARY_PATH"
+export CEF_FLAGS="--enable-features=ClipboardContentSetting --enable-clipboard --disable-gpu-sandbox"
+cd /usr/lib/stremio
+exec /usr/lib/stremio/stremio-bin $CEF_FLAGS "$@"
+EOF
+  chmod +x "$pkgdir/usr/bin/stremio"
+}"""
+
+pkgbuild_path = pathlib.Path("PKGBUILD")
+pkgbuild = pkgbuild_path.read_text()
+patched = re.sub(r"(?ms)^package\(\)\s*\{.*?^\}", NEW_PACKAGE, pkgbuild)
+
+if patched == pkgbuild:
+    print("  ❌ Section package() non trouvée dans le PKGBUILD.")
+    sys.exit(1)
+
+pkgbuild_path.write_text(patched)
+print("  ✅ PKGBUILD patché avec succès.")
+PYEOF
+
+if command -v stremio &>/dev/null; then
+  echo "  ✅ Stremio déjà installé, skip."
+else
+  install_stremio && echo "  ✅ Stremio installé." || echo "  ⚠️  Échec installation Stremio."
+fi
+
 # ─── 16. Shell par défaut ───────────────────────────────────────────────────
 echo ""
 echo "🐚 Configuration de zsh comme shell par défaut..."

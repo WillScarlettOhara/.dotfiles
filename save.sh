@@ -125,6 +125,13 @@ session.json.backup
 ImapMail
 caches
 Preview-Cache
+stremio/cef/cache/Default/Cache
+stremio/cef/cache/Default/Code Cache
+stremio/cef/cache/Default/GPUCache
+stremio/cef/cache/Default/DawnGraphiteCache
+stremio/cef/cache/Default/DawnWebGPUCache
+stremio/cef/cache/Default/Service Worker/CacheStorage
+stremio/cef/cache/Default/blob_storage
 EOF
 
 # ─── 5. Restic — Profils utilisateur ────────────────────────────────────────
@@ -139,6 +146,7 @@ USER_TARGETS=(
   "$HOME/.config/sunshine"
   "$HOME/.config/lg-buddy"
   "$HOME/.ssh/known_hosts"
+  "$HOME/.local/share/stremio/cef/cache/Default"
 )
 
 if pgrep -x thunderbird >/dev/null; then
