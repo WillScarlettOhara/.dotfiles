@@ -102,13 +102,13 @@ return {
     lazy = true,
   },
 
-  -- ════════════════════════════════════════════════════════════════════════════
-  -- Persistence (session management)
-  -- ════════════════════════════════════════════════════════════════════════════
   {
-    "folke/persistence.nvim",
-    event = "BufReadPre",
-    opts = {},
+    "rmagatti/auto-session",
+    lazy = false,
+    opts = {
+      auto_restore_enabled = true,
+      auto_save_enabled = true,
+    },
   },
 
   -- ════════════════════════════════════════════════════════════════════════════

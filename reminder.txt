@@ -2,6 +2,15 @@
 git clone https://github.com/Fausto-Korpsvart/Gruvbox-GTK-Theme.git /tmp/gruvbox-gtk
 cd /tmp/gruvbox-gtk/themes
  ./install.sh -c dark -l --tweaks macos
- gsettings set org.gnome.desktop.interface gtk-theme "Gruvbox-Dark"
+ gsettings set org.gnome.desktop.interface gtk-theme "Gruvbox-Dark" # Mauvaise façon de faire
+Installer User Themes depuis Extension manager
+Choisir Gruvbox-Dark
 
+add sunshine to autostart via commande
 
+pacman -S capitaine-cursors
+comment changer les curseurs via commande?
+
+Supprimer sigil et utiliser ebook editor de Calibre?
+
+ajouter .config/btop

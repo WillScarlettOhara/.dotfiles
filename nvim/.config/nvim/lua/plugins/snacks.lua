@@ -15,6 +15,50 @@ return {
   ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
   ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
   ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝]],
+        keys = {
+          {
+            icon = " ",
+            key = "f",
+            desc = "Trouver Fichier",
+            action = ":lua Snacks.dashboard.pick('files')",
+          },
+          { icon = " ", key = "n", desc = "Nouveau Fichier", action = ":ene | startinsert" },
+          {
+            icon = " ",
+            key = "g",
+            desc = "Rechercher Texte",
+            action = ":lua Snacks.dashboard.pick('live_grep')",
+          },
+          {
+            icon = " ",
+            key = "r",
+            desc = "Fichiers Récents",
+            action = ":lua Snacks.dashboard.pick('oldfiles')",
+          },
+          {
+            icon = " ",
+            key = "p",
+            desc = "Projets",
+            action = ":lua Snacks.dashboard.pick('projects')",
+          },
+          { icon = " ", key = "G", desc = "Lazygit", action = ":lua Snacks.lazygit()" },
+          {
+            icon = " ",
+            key = "c",
+            desc = "Configuration (Fichiers)",
+            action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})",
+          },
+          {
+            icon = "󰱽 ",
+            key = "C",
+            desc = "Configuration (Grep)",
+            action = ":lua Snacks.dashboard.pick('live_grep', {cwd = vim.fn.stdpath('config')})",
+          },
+          { icon = " ", key = "s", desc = "Restaurer Auto-Session", action = ":SessionRestore" },
+          { icon = "󰒲 ", key = "L", desc = "Menu Lazy (Plugins)", action = ":Lazy" },
+          { icon = "󰏖 ", key = "m", desc = "Menu Mason (LSP)", action = ":Mason" },
+          { icon = " ", key = "q", desc = "Quitter Neovim", action = ":qa" },
+        },
       },
       sections = {
         { section = "header" },
@@ -286,6 +330,14 @@ return {
       desc = "Delete Other Buffers",
     },
     {
+      "<leader>bD",
+      function()
+        Snacks.bufdelete.all()
+        Snacks.dashboard()
+      end,
+      desc = "Delete All Buffers & Home",
+    },
+    {
       "Q",
       function()
         Snacks.bufdelete()
@@ -385,6 +437,7 @@ return {
       end,
       desc = "Rename File",
     },
+    { "<leader>fn", "<cmd>enew<cr>", desc = "New File" },
 
     -- ════════════════════════════════════════════════════════════════════
     -- <leader>g = Git
@@ -732,6 +785,28 @@ return {
     },
   },
   init = function()
+    vim.api.nvim_create_autocmd("BufDelete", {
+      callback = function(args)
+        local b = args.buf
+        -- On ignore la fermeture du Dashboard lui-même ou si on est en train de quitter Neovim (:qa)
+        if vim.bo[b].filetype == "snacks_dashboard" or vim.v.exiting ~= vim.NIL then
+          return
+        end
+
+        -- On utilise vim.schedule pour laisser à Neovim le temps de supprimer le buffer
+        vim.schedule(function()
+          -- On vérifie si on a atterri sur un buffer vide et sans nom
+          local is_empty = vim.api.nvim_buf_get_name(0) == "" and vim.bo.filetype == ""
+          -- On compte combien de vrais buffers il nous reste
+          local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+
+          -- Si on est sur un buffer vide et que c'est le seul qui reste, on lance le Dashboard !
+          if is_empty and #bufs <= 1 then
+            Snacks.dashboard()
+          end
+        end)
+      end,
+    })
     vim.api.nvim_create_autocmd("User", {
       pattern = "VeryLazy",
       callback = function()
