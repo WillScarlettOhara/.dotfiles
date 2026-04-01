@@ -13,6 +13,7 @@ Avant de lancer le script sur une machine vierge, vous devez posséder **3 notes
 1. `SSH GitHub` : Contient votre clé privée SSH (Base64) en note, et la clé publique en champ personnalisé "PUBLIC_KEY".
 2. `Config Rclone` : Contient le token OneDrive généré par `rclone`.
 3. `Restic Password` : Contient le mot de passe de déchiffrement de la base de données Restic.
+4. `Network Config ` : Contient les DNS
 
 ---
 
@@ -23,4 +24,3 @@ Ouvrez un terminal sur la nouvelle machine (basée sur Arch Linux / CachyOS) et 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/WillScarlettOhara/.dotfiles/master/bootstrap.sh | bash
 ```
-

@@ -204,7 +204,25 @@ mkdir -p ~/.config/rclone
 bw list items --search "Config Rclone" 2>/dev/null |
   jq -r '.[] | select(.name == "Config Rclone") | .notes // empty' >~/.config/rclone/rclone.conf
 
-bw lock &>/dev/null
+# DNS — récupéré depuis Bitwarden
+NETWORK_CONFIG=$(bw list items --search "Network Config" 2>/dev/null |
+  jq -r '.[] | select(.name == "Network Config") | .notes // empty')
+DNS_PRIMARY=$(echo "$NETWORK_CONFIG" | grep "^DNS_PRIMARY=" | cut -d= -f2)
+DNS_FALLBACK=$(echo "$NETWORK_CONFIG" | grep "^DNS_FALLBACK=" | cut -d= -f2)
+
+bw lock &>/dev/null # ← toujours en dernier
+
+# DNS appliqué après bw lock
+ACTIVE_CON=$(nmcli -t -f NAME connection show --active | head -n1)
+nmcli connection modify "$ACTIVE_CON" \
+  ipv4.dns "$DNS_PRIMARY $DNS_FALLBACK" \
+  ipv4.ignore-auto-dns yes
+nmcli connection up "$ACTIVE_CON"
+sudo sed -i "s/^#*FallbackDNS=.*/FallbackDNS=$DNS_FALLBACK/" /etc/systemd/resolved.conf
+grep -q "^FallbackDNS=" /etc/systemd/resolved.conf ||
+  echo "FallbackDNS=$DNS_FALLBACK" | sudo tee -a /etc/systemd/resolved.conf
+sudo systemctl restart systemd-resolved
+echo "  ✅ DNS → $DNS_PRIMARY (principal) $DNS_FALLBACK (fallback)"
 
 # ─── 12. Montage OneDrive ───────────────────────────────────────────────────
 echo ""
