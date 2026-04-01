@@ -50,10 +50,8 @@ else
   sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
 fi
 
-# Calibre (installateur officiel, version toujours à jour)
 sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 
-# FUSE (requis par rclone mount)
 sudo modprobe fuse
 grep -qxF "user_allow_other" /etc/fuse.conf || echo "user_allow_other" | sudo tee -a /etc/fuse.conf
 echo "fuse" | sudo tee /etc/modules-load.d/fuse.conf >/dev/null
@@ -63,30 +61,22 @@ echo ""
 echo "⌨️  Configuration du clavier..."
 if [ "$IS_GNOME" = true ]; then
   gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us+qwerty-fr')]" 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface monospace-font-name "JetBrainsMono Nerd Font 11" 2>/dev/null || true
 else
   sudo localectl set-x11-keymap us pc105 qwerty-fr 2>/dev/null || true
-fi
-
-# Police monospace GNOME
-if [ "$IS_GNOME" = true ]; then
-  gsettings set org.gnome.desktop.interface monospace-font-name "JetBrainsMono Nerd Font 11" 2>/dev/null || true
 fi
 fc-cache -fq
 
 # ─── 3. Pare-feu Sunshine ───────────────────────────────────────────────────
 echo ""
-echo "🔥 Configuration du pare-feu pour Sunshine..."
+echo "🔥 Configuration du pare-feu..."
 if command -v firewall-cmd &>/dev/null; then
   sudo firewall-cmd --permanent --add-port={47984,47989,47990,48010}/tcp >/dev/null
   sudo firewall-cmd --permanent --add-port={47998,47999,48000}/udp >/dev/null
   sudo firewall-cmd --reload >/dev/null
-  echo "  ✅ Ports Firewalld ouverts"
 elif command -v ufw &>/dev/null; then
   sudo ufw allow 47984,47989,47990,48010/tcp >/dev/null
   sudo ufw allow 47998,47999,48000/udp >/dev/null
-  echo "  ✅ Ports UFW ouverts"
-else
-  echo "  ⚠️  Aucun pare-feu détecté. Ignoré."
 fi
 
 # ─── 4. Bitwarden CLI ───────────────────────────────────────────────────────
@@ -101,18 +91,15 @@ install_bitwarden_cli() {
     local current_version
     current_version=$(NODE_NO_WARNINGS=1 bw --version 2>/dev/null || echo "0.0.0")
     if [ "$current_version" = "$latest_version" ] && [ "$current_version" != "0.0.0" ]; then
-      echo "  ✅ Bitwarden CLI à jour ($current_version)"
       return
     fi
   fi
 
-  echo "  ⬇️  Téléchargement Bitwarden CLI v$latest_version..."
   sudo rm -f /usr/local/bin/bw 2>/dev/null || true
   wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
   unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
   sudo install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
   rm -rf /tmp/bw.zip /tmp/bw_extract
-  echo "  ✅ Bitwarden CLI installé."
 }
 install_bitwarden_cli
 
@@ -149,7 +136,6 @@ echo "$BW_SSH_JSON" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_rsa
 echo "$BW_SSH_JSON" | jq -r '.sshKey.publicKey  // empty' >~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
 
-# Uniquement GitHub — les IPs locales seront restaurées via restic (known_hosts)
 ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 
@@ -172,46 +158,25 @@ if [ "$IS_GNOME" = true ]; then
     rm -f /tmp/gjsosk.zip
     sudo pacman -S --needed --noconfirm python-xkbcommon
     mkdir -p ~/.cache/gjs-osk/keycodes
-    # genKeyMap.py est dans les dotfiles
-    python "$HOME/.dotfiles/genKeyMap.py" us+qwerty-fr \
-      >~/.cache/gjs-osk/keycodes/us+qwerty-fr.json
-    echo "  ✅ gjs-osk installé."
-  else
-    echo "  ⚠️  Release gjs-osk introuvable."
+    python "$HOME/.dotfiles/genKeyMap.py" us+qwerty-fr >~/.cache/gjs-osk/keycodes/us+qwerty-fr.json
   fi
 fi
 
 # ─── 9. Stow des dotfiles ───────────────────────────────────────────────────
 echo ""
 echo "🔗 Application des dotfiles via stow..."
-
-# Nettoie les éventuels dotfiles-ssh qui entreraient en conflit
-if [ -d "$HOME/.dotfiles-ssh" ]; then
-  cd "$HOME/.dotfiles-ssh"
-  stow --delete --target="$HOME" . 2>/dev/null || true
-fi
-
 cd "$HOME/.dotfiles"
 STOW_FOLDERS=(zsh tmux git nvim ghostty mpv lsd local-bin local-apps systemd-user)
 stow "${STOW_FOLDERS[@]}"
-echo "  ✅ Dotfiles appliqués !"
 
 # ─── 10. Restauration système depuis Git ────────────────────────────────────
 echo ""
-echo "⚙️  Restauration des configs système..."
-sudo cp "$HOME/.dotfiles/system-mounts/"*.mount /etc/systemd/system/ 2>/dev/null || true
-sudo systemctl daemon-reload
-
+echo "⚙️  Restauration des configs GNOME..."
 if [ "$IS_GNOME" = true ]; then
-  dconf load /org/gnome/shell/extensions/gjsosk/ \
-    <"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
-  dconf load /org/gnome/shell/extensions/dash-to-panel/ \
-    <"$HOME/.dotfiles/gnome/dash-to-panel_settings.ini" 2>/dev/null || true
-  dconf load /org/gnome/shell/extensions/arcmenu/ \
-    <"$HOME/.dotfiles/gnome/arcmenu_settings.ini" 2>/dev/null || true
-  dconf load /org/gnome/shell/extensions/vitals/ \
-    <"$HOME/.dotfiles/gnome/vitals_settings.ini" 2>/dev/null || true
-  echo "  ✅ Extensions GNOME configurées."
+  dconf load /org/gnome/shell/extensions/gjsosk/ <"$HOME/.dotfiles/gnome/gjsosk_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/dash-to-panel/ <"$HOME/.dotfiles/gnome/dash-to-panel_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/arcmenu/ <"$HOME/.dotfiles/gnome/arcmenu_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/vitals/ <"$HOME/.dotfiles/gnome/vitals_settings.ini" 2>/dev/null || true
 fi
 
 # ─── 11. Secrets depuis Bitwarden (rclone + restic uniquement) ──────────────
@@ -223,18 +188,15 @@ RESTIC_PASSWORD=$(bw list items --search "Restic Password" 2>/dev/null |
   jq -r '.[] | select(.name == "Restic Password") | (.notes // .login.password // empty)')
 
 if [ -z "$RESTIC_PASSWORD" ]; then
-  echo "❌ Mot de passe Restic introuvable dans Bitwarden. Abandon."
+  echo "❌ Mot de passe Restic introuvable. Abandon."
   exit 1
 fi
 
 mkdir -p ~/.config/rclone
 bw list items --search "Config Rclone" 2>/dev/null |
-  jq -r '.[] | select(.name == "Config Rclone") | .notes // empty' \
-    >~/.config/rclone/rclone.conf
-echo "  ✅ rclone.conf récupéré."
+  jq -r '.[] | select(.name == "Config Rclone") | .notes // empty' >~/.config/rclone/rclone.conf
 
 bw lock &>/dev/null
-echo "  🔒 Vault reverrouillé."
 
 # ─── 12. Montage OneDrive ───────────────────────────────────────────────────
 echo ""
@@ -242,7 +204,6 @@ echo "☁️  Démarrage de Rclone OneDrive..."
 systemctl --user daemon-reload
 systemctl --user enable --now rclone-onedrive.service
 
-echo "  ⏳ Attente de la connexion à OneDrive..."
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 while [ ! -d "$BACKUP_DIR" ]; do
   sleep 2
@@ -250,13 +211,13 @@ while [ ! -d "$BACKUP_DIR" ]; do
 done
 echo " ✅ OneDrive connecté !"
 
-# ─── 13. Restauration Restic ────────────────────────────────────────────────
+# ─── 13. Restauration Restic (Y compris .mount secrets) ─────────────────────
 echo ""
 echo "🔄 Restauration via Restic..."
 export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
 
 if ! restic snapshots &>/dev/null; then
-  echo "⚠️  Aucun snapshot Restic trouvé. Première installation — restauration ignorée."
+  echo "⚠️  Aucun snapshot Restic trouvé. Première installation."
 else
   echo "  ⏳ Restauration des profils utilisateurs..."
   restic restore latest --target / \
@@ -268,20 +229,20 @@ else
     --include "$HOME/.config/lg-buddy" \
     --include "$HOME/.local/share/sigil-ebook" \
     --include "$HOME/.ssh/known_hosts" \
-    2>/dev/null || echo "  ⚠️  Certains profils n'ont pas pu être restaurés."
+    2>/dev/null || true
 
-  echo "  ⏳ Restauration des configs système..."
-  sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic restore latest \
-    --target / \
+  echo "  ⏳ Restauration des configs système chiffrées (IPs, VM, fstab)..."
+  sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic restore latest --target / \
     --include "/var/lib/bluetooth" \
     --include "/etc/samba" \
     --include "/etc/fstab" \
+    --include "/etc/systemd/system/mnt-calibreweb.mount" \
+    --include "/etc/systemd/system/mnt-torrent.mount" \
     --include "/var/lib/libvirt/images/win11.qcow2" \
     --include "/etc/libvirt/qemu/win11.xml" \
-    2>/dev/null || echo "  ⚠️  Certains fichiers système n'ont pas pu être restaurés."
+    2>/dev/null || true
 
   sudo systemctl restart bluetooth 2>/dev/null || true
-  echo "  ✅ Restauration Restic terminée !"
 fi
 
 # ─── 14. Hyperviseur & Mounts ───────────────────────────────────────────────
@@ -292,17 +253,12 @@ sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/2TB /mnt/samba/data
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 sudo mkdir -p /etc/samba
 
-# ISO VirtIO
 VIRTIO_ISO="/var/lib/libvirt/images/virtio-win.iso"
 if [ ! -f "$VIRTIO_ISO" ]; then
-  echo "  💿 Téléchargement ISO VirtIO..."
-  sudo wget -q \
-    https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso \
-    -O "$VIRTIO_ISO"
+  sudo wget -q https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso -O "$VIRTIO_ISO"
   sudo chmod 644 "$VIRTIO_ISO"
 fi
 
-# Mounts systemd
 sudo systemctl daemon-reload
 for mnt in mnt-calibreweb.mount mnt-torrent.mount; do
   if [ -f "/etc/systemd/system/$mnt" ]; then
@@ -310,21 +266,15 @@ for mnt in mnt-calibreweb.mount mnt-torrent.mount; do
   fi
 done
 
-# Libvirt
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm "$USER"
 if [ -f "/etc/libvirt/qemu/win11.xml" ]; then
   sudo chown root:root "/var/lib/libvirt/images/win11.qcow2" 2>/dev/null || true
   sudo virsh define "/etc/libvirt/qemu/win11.xml" 2>/dev/null || true
-  echo "  ✅ VM Windows 11 enregistrée."
 fi
 
-# fstab
 if [ -f /etc/fstab ] && grep -q "ntfs3\|cifs" /etc/fstab 2>/dev/null; then
-  echo "  ✅ /etc/fstab restauré par restic."
-  sudo mount -a 2>/dev/null || echo "  ⚠️  Certains mounts ont échoué (normal si réseau indisponible)."
-else
-  echo "  ⚠️  /etc/fstab vide — à remplir manuellement après première sauvegarde."
+  sudo mount -a 2>/dev/null || true
 fi
 
 # ─── 15. LG Buddy ───────────────────────────────────────────────────────────
@@ -332,19 +282,15 @@ if [ "$IS_GNOME" = true ]; then
   echo ""
   echo "📺 Installation de LG Buddy..."
   sudo pacman -S --needed --noconfirm wakeonlan zenity
-
-  git clone git@github.com:Faceless3882/LG_Buddy.git /tmp/LG_Buddy 2>/dev/null ||
-    git -C /tmp/LG_Buddy pull --ff-only
+  git clone git@github.com:Faceless3882/LG_Buddy.git /tmp/LG_Buddy 2>/dev/null || git -C /tmp/LG_Buddy pull --ff-only
   chmod +x /tmp/LG_Buddy/install.sh /tmp/LG_Buddy/configure.sh
 
   if [ -f "$HOME/.config/lg-buddy/config.env" ]; then
-    echo "  ✅ Config LG Buddy trouvée (restic) — installation silencieuse..."
     cat >/tmp/LG_Buddy/configure.sh <<'STUB'
 #!/bin/bash
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 . "$SCRIPT_DIR/bin/LG_Buddy_Common"
 CONFIG_FILE="$(lg_buddy_user_config_path)"
-echo "  → Configuration chargée depuis $CONFIG_FILE"
 if [ -f "$HOME/.config/systemd/user/LG_Buddy_screen.service" ]; then
   systemctl --user daemon-reload
   systemctl --user restart LG_Buddy_screen.service 2>/dev/null || true
@@ -353,10 +299,8 @@ STUB
     chmod +x /tmp/LG_Buddy/configure.sh
     printf 'Y\nN\n' | /tmp/LG_Buddy/install.sh
   else
-    echo "  ⚠️  Aucune config LG Buddy — installation interactive..."
     /tmp/LG_Buddy/install.sh
   fi
-  echo "  ✅ LG Buddy installé."
 fi
 
 # ─── 16. Shell par défaut ───────────────────────────────────────────────────
@@ -365,17 +309,8 @@ echo "🐚 Configuration de zsh comme shell par défaut..."
 ZSH_PATH=$(which zsh)
 grep -qxF "$ZSH_PATH" /etc/shells || echo "$ZSH_PATH" | sudo tee -a /etc/shells
 sudo usermod -s "$ZSH_PATH" "$USER"
-echo "  ✅ Shell → zsh (effectif à la prochaine session)"
 
 echo ""
 echo "========================================================="
 echo "🎉 RESTAURATION TOTALE TERMINÉE !"
 echo "========================================================="
-echo ""
-echo "Actions manuelles restantes :"
-echo "  1. Déconnectez/reconnectez votre session (libvirt, GNOME, zsh)"
-echo "  2. Lancez ./post_relog.sh pour activer les extensions GNOME"
-echo ""
-echo "⚠️  Si première installation (pas de snapshot restic) :"
-echo "  - Configurez /etc/fstab manuellement"
-echo "  - Lancez save.sh après configuration pour créer le premier snapshot"
