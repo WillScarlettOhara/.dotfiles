@@ -23,7 +23,7 @@ PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip zoxide wl-clipboard ttf-jetbrains-mono-nerd extension-manager
   nodejs npm python jre-openjdk rust luarocks
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
-  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine discord
+  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine discord element-desktop
   xkb-qwerty-fr
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
 )
@@ -244,6 +244,7 @@ else
     --include "$HOME/.thunderbird" \
     --include "$HOME/.config/libreoffice" \
     --include "$HOME/.config/calibre" \
+    --include "$HOME/.config/lg-buddy" \
     --include "$HOME/.local/share/sigil-ebook" 2>/dev/null || echo "⚠️  Certains fichiers utilisateurs n'ont pas pu être restaurés."
 
   echo "  ⏳ Restauration des clés Bluetooth et de la VM..."
@@ -295,6 +296,47 @@ if [ -f "/etc/libvirt/qemu/${NOM_VM}.xml" ]; then
   echo "🪟 Enregistrement de la VM Windows 11..."
   sudo chown root:root "/var/lib/libvirt/images/${NOM_VM}.qcow2" 2>/dev/null || true
   sudo virsh define "/etc/libvirt/qemu/${NOM_VM}.xml" 2>/dev/null || true
+fi
+
+# ─── LG Buddy ───────────────────────────────────────────────────────────────
+if [ "$IS_GNOME" = true ]; then
+  echo ""
+  echo "📺 Installation de LG Buddy..."
+
+  sudo pacman -S --needed --noconfirm python python-pip wakeonlan zenity
+
+  git clone git@github.com:Faceless3882/LG_Buddy.git /tmp/LG_Buddy 2>/dev/null ||
+    git -C /tmp/LG_Buddy pull --ff-only
+  chmod +x /tmp/LG_Buddy/install.sh /tmp/LG_Buddy/configure.sh
+
+  if [ -f "$HOME/.config/lg-buddy/config.env" ]; then
+    echo "  ✅ Config LG Buddy trouvée (restic) — installation silencieuse..."
+
+    # Bypass configure.sh : config déjà restaurée par restic
+    cat >/tmp/LG_Buddy/configure.sh <<'STUB'
+#!/bin/bash
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+. "$SCRIPT_DIR/bin/LG_Buddy_Common"
+CONFIG_FILE="$(lg_buddy_user_config_path)"
+echo "  → Configuration chargée depuis $CONFIG_FILE"
+if [ -f "$HOME/.config/systemd/user/LG_Buddy_screen.service" ]; then
+  systemctl --user daemon-reload
+  systemctl --user restart LG_Buddy_screen.service 2>/dev/null || true
+fi
+STUB
+    chmod +x /tmp/LG_Buddy/configure.sh
+
+    # Prompts restants dans install.sh :
+    # "Enable screen monitor? [Y/n]" → Y
+    # "Disable sleep/wake? (y/N)"   → N
+    printf 'Y\nN\n' | /tmp/LG_Buddy/install.sh
+
+  else
+    echo "  ⚠️  Aucune config LG Buddy trouvée — installation interactive..."
+    /tmp/LG_Buddy/install.sh
+  fi
+
+  echo "  ✅ LG Buddy installé."
 fi
 
 # ─── 13. Shell par défaut ───────────────────────────────────────────────────

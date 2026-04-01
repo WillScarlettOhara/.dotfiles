@@ -144,6 +144,7 @@ USER_TARGETS=(
   "$HOME/.config/calibre"
   "$HOME/.local/share/sigil-ebook"
   "$HOME/.config/sunshine"
+  "$HOME/.config/lg-buddy"
 )
 
 if pgrep -x thunderbird >/dev/null; then
