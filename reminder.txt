@@ -14,3 +14,19 @@ comment changer les curseurs via commande?
 Supprimer sigil et utiliser ebook editor de Calibre?
 
 ajouter .config/btop
+
+blinking cursor
+
+Incremental selection
+v_an - select parent node
+v_in - select child node
+v_]n - select prev node
+v_[n - select next node
+
+revoir git log
+
+vim.cmd("packadd nvim.undotree")
+vim.keymap.set("n", "<leader>u", require("undotree").open)
+
+Nettoyer ce que je n'utilise pas dans neovim
+
