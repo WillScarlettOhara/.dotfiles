@@ -60,28 +60,30 @@ echo "fuse" | sudo tee /etc/modules-load.d/fuse.conf >/dev/null
 echo ""
 echo "🦀 Installation de Rustup..."
 
-# Garde-fou : désinstaller rust système s'il est présent (pacman ou dépendances)
-if pacman -Qi rust &>/dev/null; then
-  echo "  ⚠️  Rust système détecté, désinstallation avant rustup..."
-  sudo pacman -Rdd --noconfirm rust 2>/dev/null || true
-  # rust-analyzer pacman dépend de rust, on le retire aussi s'il est là
-  sudo pacman -Rdd --noconfirm rust-analyzer 2>/dev/null || true
-fi
-
-# Installation interactive de rustup
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh
-sh /tmp/rustup-init.sh </dev/tty
-
-if [ -f "$HOME/.cargo/env" ]; then
-  # shellcheck source=/dev/null
-  source "$HOME/.cargo/env"
+if command -v rustup &>/dev/null && command -v rust-analyzer &>/dev/null; then
+  echo "  ✅ Rustup et rust-analyzer déjà installés, skip."
 else
-  echo "❌ Rustup installation semble avoir échoué."
-  exit 1
-fi
+  # Garde-fou : désinstaller rust système s'il est présent
+  if pacman -Qi rust &>/dev/null; then
+    echo "  ⚠️  Rust système détecté, désinstallation avant rustup..."
+    sudo pacman -Rdd --noconfirm rust 2>/dev/null || true
+    sudo pacman -Rdd --noconfirm rust-analyzer 2>/dev/null || true
+  fi
 
-rustup component add rust-analyzer
-echo "  ✅ Rust $(rustc --version) + rust-analyzer installés via rustup"
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh
+  sh /tmp/rustup-init.sh </dev/tty
+
+  if [ -f "$HOME/.cargo/env" ]; then
+    # shellcheck source=/dev/null
+    source "$HOME/.cargo/env"
+  else
+    echo "❌ Rustup installation semble avoir échoué."
+    exit 1
+  fi
+
+  rustup component add rust-analyzer
+  echo "  ✅ Rust $(rustc --version) + rust-analyzer installés via rustup"
+fi
 
 # ─── 2. Configuration du clavier ────────────────────────────────────────────
 echo ""
