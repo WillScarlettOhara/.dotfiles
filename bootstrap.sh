@@ -25,7 +25,7 @@ PACKAGES=(
   zoxide wl-clipboard ttf-jetbrains-mono-nerd qt6ct
   nodejs npm python python-pip jre-openjdk rust luarocks
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
-  neovim mpv firefox thunderbird libreoffice-fresh sigil sunshine
+  neovim-git mpv firefox thunderbird libreoffice-fresh sigil sunshine
   discord element-desktop
   xkb-qwerty-fr hunspell-en_gb hunspell-fr-comprehensive
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
