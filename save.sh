@@ -25,6 +25,32 @@ if ! command -v restic &>/dev/null || ! command -v jq &>/dev/null; then
   fi
 fi
 
+# ─── 0.5 Vérification OneDrive ──────────────────────────────────────────────
+log ""
+log "☁️  Vérification de OneDrive..."
+
+if ! systemctl --user is-active --quiet rclone-onedrive.service; then
+  log "  ⚠️  rclone-onedrive.service inactif — tentative de démarrage..."
+  systemctl --user start rclone-onedrive.service
+
+  echo -n "  ⏳ Attente du montage OneDrive"
+  TIMEOUT=30
+  ELAPSED=0
+  while [ ! -d "$HOME/OneDrive" ] && [ "$ELAPSED" -lt "$TIMEOUT" ]; do
+    sleep 2
+    ELAPSED=$((ELAPSED + 2))
+    echo -n "."
+  done
+  echo ""
+
+  if [ ! -d "$HOME/OneDrive" ]; then
+    log "  ❌ OneDrive non disponible après ${TIMEOUT}s. Abandon."
+    exit 1
+  fi
+fi
+
+log "  ✅ OneDrive monté et accessible."
+
 # ─── 1. Bitwarden — mot de passe Restic ─────────────────────────────────────
 log ""
 log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
@@ -53,6 +79,7 @@ if [ -z "$RESTIC_PASSWORD" ]; then
   log "❌ Mot de passe Restic introuvable dans Bitwarden."
   exit 1
 fi
+log "  ✅ Mot de passe Restic récupéré."
 
 if ! restic snapshots &>/dev/null; then
   log "🆕 Initialisation du dépôt Restic..."
@@ -155,8 +182,18 @@ else
   USER_TARGETS+=("$HOME/.thunderbird")
 fi
 
-if restic backup "${USER_TARGETS[@]}" --exclude-file="$EXCLUDES_FILE" >>"$LOG_FILE" 2>&1; then
+set +e
+restic backup "${USER_TARGETS[@]}" \
+  --exclude-file="$EXCLUDES_FILE" \
+  --verbose \
+  2>&1 | tee -a "$LOG_FILE"
+USER_STATUS=${PIPESTATUS[0]}
+set -e
+
+if [ "$USER_STATUS" -eq 0 ]; then
   log "  ✅ Profils utilisateurs sauvegardés."
+else
+  log "  ⚠️  Erreurs restic profils (voir log)."
 fi
 
 # ─── 6. Restic — Fichiers système chiffrés (IPs, Fstab, VM) ─────────────────
@@ -176,7 +213,8 @@ sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
   "/etc/systemd/system/mnt-torrent.mount" \
   "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
   "$VM_XML" \
-  2>&1 | tee -a "$LOG_FILE" >/dev/null
+  --verbose \
+  2>&1 | tee -a "$LOG_FILE"
 SYS_STATUS=${PIPESTATUS[0]}
 set -e
 
@@ -184,28 +222,28 @@ rm -f "$EXCLUDES_FILE" "$VM_XML"
 
 if [ "$SYS_STATUS" -eq 0 ]; then
   log "  ✅ Fichiers système sauvegardés (Chiffrés)."
+else
+  log "  ⚠️  Erreurs restic système (voir log)."
 fi
 
 # ─── 7. Nettoyage snapshots ─────────────────────────────────────────────────
 log ""
 log "🧹 Nettoyage des anciens snapshots..."
-restic forget --keep-last 10 --prune >>"$LOG_FILE" 2>&1 || true
+restic forget --keep-last 10 --prune --verbose \
+  2>&1 | tee -a "$LOG_FILE" || true
 
-# ─── Résumé des snapshots Restic ────────────────────────────────────────────
+# ─── 8. Résumé final ────────────────────────────────────────────────────────
 log ""
-log "📊 Derniers snapshots Restic :"
-log "────────────────────────────────────────"
-restic snapshots --last 5 --compact 2>/dev/null | while IFS= read -r line; do
-  log "  $line"
-done
-log "────────────────────────────────────────"
+log "📊 Snapshots actuels :"
+log "════════════════════════════════════════════════════════════"
+restic snapshots 2>/dev/null | tee -a "$LOG_FILE"
+log "════════════════════════════════════════════════════════════"
 
-# Taille du repo
 REPO_SIZE=$(du -sh "$RESTIC_REPOSITORY" 2>/dev/null | cut -f1)
+log ""
 log "💾 Taille du dépôt : $REPO_SIZE"
-log "📋 Log complet : $LOG_FILE"
-
+log "📋 Log complet     : $LOG_FILE"
 log ""
 log "======================================"
-log "✅ Sauvegarde terminée !"
+log "✅ Sauvegarde terminée : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
