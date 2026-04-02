@@ -105,7 +105,7 @@ return {
   {
     "folke/persistence.nvim",
     event = "BufReadPre",
-    opts = {},
+    opts = { exclude = { "help", "nofile", "quickfix", "terminal" } },
   },
 
   -- ════════════════════════════════════════════════════════════════════════════
