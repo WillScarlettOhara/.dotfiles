@@ -23,7 +23,7 @@ echo "📦 Installation des paquets du système..."
 PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip
   zoxide wl-clipboard ttf-jetbrains-mono-nerd qt6ct
-  nodejs npm python python-pip jre-openjdk rust luarocks
+  nodejs npm python python-pip jre-openjdk rust luarocks tree-sitter
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
   neovim-git mpv firefox thunderbird libreoffice-fresh sigil sunshine
   discord element-desktop
