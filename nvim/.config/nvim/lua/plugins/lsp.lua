@@ -199,7 +199,6 @@ return {
           "gopls",
           "zls",
           "ts_ls",
-          "rust-analyzer",
           "intelephense",
           "bashls",
           "pyright",
