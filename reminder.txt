@@ -13,8 +13,6 @@ comment changer les curseurs via commande?
 
 Supprimer sigil et utiliser ebook editor de Calibre?
 
-ajouter .config/btop
-
 blinking cursor
 
 Incremental selection
