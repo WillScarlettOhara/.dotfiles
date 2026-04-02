@@ -247,6 +247,7 @@ nmcli connection modify "$ACTIVE_CON" \
   ipv4.dns "$DNS_PRIMARY $DNS_FALLBACK" \
   ipv4.ignore-auto-dns yes
 nmcli connection up "$ACTIVE_CON"
+sudo sed -i "s/^#*DNS=.*/DNS=$DNS_PRIMARY/" /etc/systemd/resolved.conf
 sudo sed -i "s/^#*FallbackDNS=.*/FallbackDNS=$DNS_FALLBACK/" /etc/systemd/resolved.conf
 grep -q "^FallbackDNS=" /etc/systemd/resolved.conf ||
   echo "FallbackDNS=$DNS_FALLBACK" | sudo tee -a /etc/systemd/resolved.conf
