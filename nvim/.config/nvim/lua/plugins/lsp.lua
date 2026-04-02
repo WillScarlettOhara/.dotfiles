@@ -151,6 +151,9 @@ return {
       local handlers = {
         default_setup,
 
+        -- disable mason rust_analyzer so rustaceanvim handles rust
+        ["rust_analyzer"] = function() end,
+
         ["lua_ls"] = function()
           lspconfig.lua_ls.setup({
             settings = {
