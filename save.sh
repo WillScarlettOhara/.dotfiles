@@ -191,6 +191,20 @@ log ""
 log "🧹 Nettoyage des anciens snapshots..."
 restic forget --keep-last 10 --prune >>"$LOG_FILE" 2>&1 || true
 
+# ─── Résumé des snapshots Restic ────────────────────────────────────────────
+log ""
+log "📊 Derniers snapshots Restic :"
+log "────────────────────────────────────────"
+restic snapshots --last 5 --compact 2>/dev/null | while IFS= read -r line; do
+  log "  $line"
+done
+log "────────────────────────────────────────"
+
+# Taille du repo
+REPO_SIZE=$(du -sh "$RESTIC_REPOSITORY" 2>/dev/null | cut -f1)
+log "💾 Taille du dépôt : $REPO_SIZE"
+log "📋 Log complet : $LOG_FILE"
+
 log ""
 log "======================================"
 log "✅ Sauvegarde terminée !"
