@@ -54,7 +54,12 @@ return {
             desc = "Neovim [C]onfig (Grep)",
             action = ":lua Snacks.dashboard.pick('live_grep', {cwd = vim.fn.stdpath('config')})",
           },
-          { icon = " ", key = "s", desc = "Restaurer [s]ession", action = ":SessionRestore" },
+          {
+            icon = " ",
+            key = "s",
+            desc = "Restaurer [s]ession",
+            action = ":lua require('persistence').load()",
+          },
           { icon = "󰒲 ", key = "L", desc = "Menu [L]azy (Plugins)", action = ":Lazy" },
           { icon = "󰏖 ", key = "m", desc = "Menu [m]ason (LSP)", action = ":Mason" },
           { icon = " ", key = "q", desc = "[q]uitter Neovim", action = ":qa" },

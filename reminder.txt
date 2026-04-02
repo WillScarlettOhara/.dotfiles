@@ -6,8 +6,6 @@ cd /tmp/gruvbox-gtk/themes
 Installer User Themes depuis Extension manager
 Choisir Gruvbox-Dark
 
-add sunshine to autostart via commande
-
 pacman -S capitaine-cursors
 comment changer les curseurs via commande?
 
