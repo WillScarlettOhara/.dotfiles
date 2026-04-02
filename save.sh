@@ -81,9 +81,13 @@ if [ -z "$RESTIC_PASSWORD" ]; then
 fi
 log "  ✅ Mot de passe Restic récupéré."
 
+# Vérification du dépôt et suppression des verrous fantômes
 if ! restic snapshots &>/dev/null; then
   log "🆕 Initialisation du dépôt Restic..."
   restic init
+else
+  log "🔓 Nettoyage des verrous Restic résiduels..."
+  restic unlock >/dev/null 2>&1 || true
 fi
 
 # ─── 2. GitHub — Dotfiles ───────────────────────────────────────────────────
