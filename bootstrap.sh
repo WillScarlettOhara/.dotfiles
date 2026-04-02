@@ -23,7 +23,7 @@ echo "📦 Installation des paquets du système..."
 PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip
   zoxide wl-clipboard ttf-jetbrains-mono-nerd qt6ct
-  nodejs npm python python-pip jre-openjdk rust luarocks tree-sitter
+  nodejs npm python python-pip jre-openjdk luarocks tree-sitter
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
   neovim-git mpv firefox thunderbird libreoffice-fresh sigil sunshine
   discord element-desktop
@@ -55,6 +55,33 @@ sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | 
 sudo modprobe fuse
 grep -qxF "user_allow_other" /etc/fuse.conf || echo "user_allow_other" | sudo tee -a /etc/fuse.conf
 echo "fuse" | sudo tee /etc/modules-load.d/fuse.conf >/dev/null
+
+# ─── 1b. Rustup ─────────────────────────────────────────────────────────────
+echo ""
+echo "🦀 Installation de Rustup..."
+
+# Garde-fou : désinstaller rust système s'il est présent (pacman ou dépendances)
+if pacman -Qi rust &>/dev/null; then
+  echo "  ⚠️  Rust système détecté, désinstallation avant rustup..."
+  sudo pacman -Rdd --noconfirm rust 2>/dev/null || true
+  # rust-analyzer pacman dépend de rust, on le retire aussi s'il est là
+  sudo pacman -Rdd --noconfirm rust-analyzer 2>/dev/null || true
+fi
+
+# Installation interactive de rustup
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh
+sh /tmp/rustup-init.sh </dev/tty
+
+if [ -f "$HOME/.cargo/env" ]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.cargo/env"
+else
+  echo "❌ Rustup installation semble avoir échoué."
+  exit 1
+fi
+
+rustup component add rust-analyzer
+echo "  ✅ Rust $(rustc --version) + rust-analyzer installés via rustup"
 
 # ─── 2. Configuration du clavier ────────────────────────────────────────────
 echo ""
