@@ -166,7 +166,7 @@ fi
 echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-STOW_FOLDERS=(zsh tmux git nvim ghostty mpv lsd local-bin local-apps systemd-user)
+STOW_FOLDERS=(zsh tmux btop git nvim ghostty mpv lsd local-bin local-apps systemd-user)
 stow "${STOW_FOLDERS[@]}"
 
 # ─── 10. Restauration système depuis Git ────────────────────────────────────
