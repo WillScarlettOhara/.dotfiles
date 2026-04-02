@@ -30,6 +30,7 @@ vim.opt.timeoutlen = 1000 -- Time in ms to wait for a mapped key sequence to com
 vim.opt.confirm = true -- Prompt for confirmation instead of failing on unsaved changes
 vim.opt.autoread = true -- Automatically reload files changed outside of Neovim
 vim.opt.sessionoptions:remove("blank") -- Interdit aux sessions Neovim de sauvegarder les fenêtres/buffers vides (blank)
+vim.opt.iskeyword:append("-") -- include - in words
 
 -- ============================================================================
 -- UI/Display
