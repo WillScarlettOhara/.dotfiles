@@ -168,6 +168,13 @@ chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
 ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 
+# ─── 6.5 Configuration de Git (Anonymisation) ───────────────────────────────
+echo ""
+echo "🛡️  Configuration de Git (Anonymisation Github)..."
+git config --global user.name "WillScarlettOhara"
+git config --global user.email "39462014+WillScarlettOhara@users.noreply.github.com"
+echo "  ✅ Identité Git configurée sur l'adresse privée (noreply)."
+
 # ─── 7. Clone des dotfiles ──────────────────────────────────────────────────
 echo ""
 echo "📂 Clone des dotfiles depuis GitHub..."
