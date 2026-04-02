@@ -44,10 +44,10 @@ fi
 
 if command -v paru &>/dev/null; then
   paru -Syu --noconfirm
-  paru -S --needed --noconfirm "${PACKAGES[@]}"
+  paru -S --needed "${PACKAGES[@]}"
 else
   sudo pacman -Syu --noconfirm
-  sudo pacman -S --needed --noconfirm "${PACKAGES[@]}"
+  sudo pacman -S --needed "${PACKAGES[@]}"
 fi
 
 sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
