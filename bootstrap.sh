@@ -92,7 +92,7 @@ if [ "$IS_GNOME" = true ]; then
 else
   sudo localectl set-x11-keymap us pc105 qwerty-fr 2>/dev/null || true
 fi
-fc-cache -fq
+fc-cache -f
 
 # ─── 3. Pare-feu Sunshine ───────────────────────────────────────────────────
 echo ""
