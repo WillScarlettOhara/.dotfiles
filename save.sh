@@ -108,15 +108,24 @@ fi
 if [ -z "$(git -C "$HOME/.dotfiles" status --porcelain)" ]; then
   log "  ✅ Aucun changement dans les dotfiles."
 else
-  git -C "$HOME/.dotfiles" add .
-  if git -C "$HOME/.dotfiles" commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null 2>&1; then
-    if git -C "$HOME/.dotfiles" push -q origin master; then
-      log "  ✅ Dotfiles pushés sur GitHub."
+  git -C "$HOME/.dotfiles" status --short | head -20
+  echo ""
+  echo -n "  📤 Commit et push sur GitHub ? [o/N] " >/dev/tty
+  read -r CONFIRM_PUSH </dev/tty
+  if [[ "${CONFIRM_PUSH,,}" == "o" ]]; then
+    git -C "$HOME/.dotfiles" add .
+    if git -C "$HOME/.dotfiles" \
+      commit -m "Auto Backup: $(date '+%Y-%m-%d %H:%M')" >/dev/null 2>&1; then
+      if git -C "$HOME/.dotfiles" push -q origin master; then
+        log "  ✅ Dotfiles pushés sur GitHub."
+      else
+        log "  ⚠️  Push GitHub échoué."
+      fi
     else
-      log "  ⚠️  Push GitHub échoué."
+      log "  ⚠️  Commit échoué."
     fi
   else
-    log "  ⚠️  Commit échoué (identité git configurée ?)."
+    log "  ⏭️  Push GitHub ignoré par l'utilisateur."
   fi
 fi
 
@@ -233,14 +242,13 @@ fi
 # ─── 7. Nettoyage snapshots ─────────────────────────────────────────────────
 log ""
 log "🧹 Nettoyage des anciens snapshots..."
-restic forget --keep-last 10 --prune --verbose \
-  2>&1 | tee -a "$LOG_FILE" || true
+restic forget --keep-last 10 --prune 2>/dev/null | grep -E "^(keep|remove|Applying|snapshots for)" | tee -a "$LOG_FILE" || true
 
 # ─── 8. Résumé final ────────────────────────────────────────────────────────
 log ""
-log "📊 Snapshots actuels :"
+log "📊 Résumé des snapshots :"
 log "════════════════════════════════════════════════════════════"
-restic snapshots 2>/dev/null | tee -a "$LOG_FILE"
+restic snapshots --compact 2>/dev/null | tee -a "$LOG_FILE"
 log "════════════════════════════════════════════════════════════"
 
 REPO_SIZE=$(du -sh "$RESTIC_REPOSITORY" 2>/dev/null | cut -f1)
