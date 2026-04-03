@@ -29,9 +29,9 @@ fi
 log ""
 log "☁️  Vérification de OneDrive..."
 
-if ! systemctl --user is-active --quiet rclone-onedrive.service; then
+if ! systemctl is-active --quiet rclone-onedrive.service; then
   log "  ⚠️  rclone-onedrive.service inactif — tentative de démarrage..."
-  systemctl --user start rclone-onedrive.service
+  sudo systemctl start rclone-onedrive.service
 
   echo -n "  ⏳ Attente du montage OneDrive"
   TIMEOUT=30

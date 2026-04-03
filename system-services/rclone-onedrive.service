@@ -1,13 +1,10 @@
 [Unit]
 Description=RClone OneDrive (Files on Demand)
-After=graphical-session.target
-Wants=graphical-session.target
 
 [Service]
-Type=notify
+Type=simple
 ExecStartPre=/bin/bash -c 'fusermount3 -uz %h/OneDrive 2>/dev/null || true'
 ExecStartPre=/usr/bin/mkdir -p %h/OneDrive
-
 ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
   --config=%h/.config/rclone/rclone.conf \
   --allow-non-empty \
@@ -31,9 +28,7 @@ ExecStart=/usr/bin/rclone mount OneDrive: %h/OneDrive \
   --allow-other \
   --log-level INFO \
   --log-file %h/.local/share/rclone-onedrive.log
-
 ExecStop=/bin/fusermount3 -u %h/OneDrive
-
 Restart=always
 RestartSec=10
 StartLimitBurst=0
