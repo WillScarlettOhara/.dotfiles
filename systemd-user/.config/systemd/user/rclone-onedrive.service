@@ -36,6 +36,7 @@ ExecStop=/bin/fusermount3 -u %h/OneDrive
 
 Restart=always
 RestartSec=10
+StartLimitBurst=0
 
 [Install]
 WantedBy=graphical-session.target
