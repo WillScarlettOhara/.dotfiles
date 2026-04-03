@@ -39,4 +39,4 @@ RestartSec=10
 StartLimitBurst=0
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target
