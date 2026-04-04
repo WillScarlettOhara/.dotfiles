@@ -158,14 +158,4 @@ return {
     event = { "BufReadPost", "BufNewFile" },
     opts = {},
   },
-
-  -- ════════════════════════════════════════════════════════════════════════════
-  -- Comments
-  -- ════════════════════════════════════════════════════════════════════════════
-  {
-    "numToStr/Comment.nvim",
-    opts = {},
-    lazy = false,
-  },
-  { "joosepalviste/nvim-ts-context-commentstring", lazy = true },
 }

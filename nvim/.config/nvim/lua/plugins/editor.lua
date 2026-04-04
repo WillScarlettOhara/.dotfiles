@@ -80,6 +80,7 @@ return {
       })
 
       require("mini.pairs").setup()
+      require("mini.comment").setup()
 
       local wk = require("which-key")
       wk.add({
