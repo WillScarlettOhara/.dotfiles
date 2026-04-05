@@ -168,6 +168,9 @@ chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
 ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 
+sudo cp ~/.ssh/id_rsa /root/.ssh/id_rsa && sudo chown root:root /root/.ssh/id_rsa
+sudo chmod 600 /root/.ssh/id_rsa
+
 # ─── 6.5 Configuration de Git (Anonymisation) ───────────────────────────────
 echo ""
 echo "🛡️  Configuration de Git (Anonymisation Github)..."
