@@ -43,6 +43,14 @@ return {
       hl(0, "RainbowDelimiter5", { fg = "#8EC07C" }) -- aqua
       hl(0, "RainbowDelimiter6", { fg = "#83A598" }) -- blue
       hl(0, "RainbowDelimiter7", { fg = "#D3869B" }) -- purple
+
+      -- Cursor colors per mode
+      hl(0, "CursorNormal", { fg = "#1d2021", bg = "#ebdbb2" })
+      hl(0, "CursorInsert", { fg = "#1d2021", bg = "#83a598" })
+      hl(0, "CursorVisual", { fg = "#1d2021", bg = "#d3869b" })
+      hl(0, "CursorReplace", { fg = "#1d2021", bg = "#fb4934" })
+      hl(0, "CursorCommand", { fg = "#1d2021", bg = "#8ec07c" })
+      hl(0, "CursorTerminal", { fg = "#1d2021", bg = "#FB4934" })
     end,
   },
 }

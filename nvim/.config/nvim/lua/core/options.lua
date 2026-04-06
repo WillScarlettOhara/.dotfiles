@@ -30,6 +30,7 @@ vim.opt.confirm = true -- Prompt for confirmation instead of failing on unsaved 
 vim.opt.autoread = true -- Automatically reload files changed outside of Neovim
 vim.opt.sessionoptions:remove("blank") -- Interdit aux sessions Neovim de sauvegarder les fenêtres/buffers vides (blank)
 vim.opt.iskeyword:append("-") -- include - in words
+vim.opt.clipboard = "unnamedplus" -- Use system clipboard for all yank/paste operations
 
 -- ============================================================================
 -- UI/Display
@@ -50,6 +51,15 @@ vim.opt.cmdheight = 1 -- Height of command line area
 vim.opt.pumheight = 10 -- Maximum height of popup menu
 vim.opt.fillchars = { eob = " " } -- Hide ~ characters on empty lines
 vim.o.winborder = "rounded" -- Use rounded borders for floating windows
+
+vim.opt.guicursor = {
+  "n-sm:block-CursorNormal",
+  "i-ci:ver25-CursorInsert",
+  "v-ve:block-CursorVisual",
+  "r:hor20-CursorReplace",
+  "c:ver25-CursorCommand",
+  "t:block-CursorTerminal",
+}
 
 -- ============================================================================
 -- Search
