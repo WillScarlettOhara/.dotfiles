@@ -105,7 +105,7 @@ export QT_QPA_PLATFORMTHEME=qt6ct
 # ─── ZSH VI MODE CONFIGURATION ──────────────────────────────────────────────
 function zvm_config() {
   ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT       # Commence toujours en mode Insertion
-  ZVM_VI_ESCAPE_BINDKEY=jj
+  ZVM_VI_INSERT_ESCAPE_BINDKEY=jj
   ZVM_CURSOR_STYLE_ENABLED=true             # Change la forme du curseur (Ligne = Insert, Bloc = Normal)
 }
 zinit light jeffreytse/zsh-vi-mode
