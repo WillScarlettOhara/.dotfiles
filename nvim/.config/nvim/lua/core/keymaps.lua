@@ -103,4 +103,4 @@ vim.keymap.set("n", "<leader>H", function()
     -- Ouvre la cmdline avec le mot pré-rempli pour correction manuelle
     vim.fn.feedkeys(":help " .. word, "n")
   end
-end, { desc = "Help sous le curseur" })
+end, { desc = "Help Word Under Cursor" })
