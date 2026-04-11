@@ -38,6 +38,10 @@ if [ "$IS_GNOME" = true ]; then
     gnome-shell-extension-vitals
     gnome-shell-extension-appindicator
     gnome-shell-extension-copyous
+    gnome-shell-extension-color-picker
+    gnome-shell-extension-soft-brightness-plus
+    gnome-shell-extension-user-themes
+    gnome-clocks
     extension-manager
   )
 fi
@@ -216,6 +220,11 @@ if [ "$IS_GNOME" = true ]; then
   dconf load /org/gnome/shell/extensions/dash-to-panel/ <"$HOME/.dotfiles/gnome/dash-to-panel_settings.ini" 2>/dev/null || true
   dconf load /org/gnome/shell/extensions/arcmenu/ <"$HOME/.dotfiles/gnome/arcmenu_settings.ini" 2>/dev/null || true
   dconf load /org/gnome/shell/extensions/vitals/ <"$HOME/.dotfiles/gnome/vitals_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/color-picker@tuberry/ <"$HOME/.dotfiles/gnome/color-picker_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/soft-brightness-plus@joelkitching.com/ <"$HOME/.dotfiles/gnome/soft-brightness_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com/ <"$HOME/.dotfiles/gnome/user-themes_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/appindicatorsupport@rgcjonas.gmail.com/ <"$HOME/.dotfiles/gnome/appindicator_settings.ini" 2>/dev/null || true
+  dconf load /org/gnome/shell/extensions/copyous@boerdereinar.dev/ <"$HOME/.dotfiles/gnome/copyous_settings.ini" 2>/dev/null || true
 
   echo "⚙️  Application des préférences GNOME (Tweaks & UI)..."
   gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close' 2>/dev/null || true

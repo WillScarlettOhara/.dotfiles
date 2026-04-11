@@ -103,6 +103,11 @@ if [ "$IS_GNOME" = true ]; then
   dconf dump /org/gnome/shell/extensions/dash-to-panel/ >"$HOME/.dotfiles/gnome/dash-to-panel_settings.ini" 2>/dev/null || true
   dconf dump /org/gnome/shell/extensions/arcmenu/ >"$HOME/.dotfiles/gnome/arcmenu_settings.ini" 2>/dev/null || true
   dconf dump /org/gnome/shell/extensions/vitals/ >"$HOME/.dotfiles/gnome/vitals_settings.ini" 2>/dev/null || true
+  dconf dump /org/gnome/shell/extensions/color-picker@tuberry/ >"$HOME/.dotfiles/gnome/color-picker_settings.ini" 2>/dev/null || true
+  dconf dump /org/gnome/shell/extensions/soft-brightness-plus@joelkitching.com/ >"$HOME/.dotfiles/gnome/soft-brightness_settings.ini" 2>/dev/null || true
+  dconf dump /org/gnome/shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com/ >"$HOME/.dotfiles/gnome/user-themes_settings.ini" 2>/dev/null || true
+  dconf dump /org/gnome/shell/extensions/appindicatorsupport@rgcjonas.gmail.com/ >"$HOME/.dotfiles/gnome/appindicator_settings.ini" 2>/dev/null || true
+  dconf dump /org/gnome/shell/extensions/copyous@boerdereinar.dev/ >"$HOME/.dotfiles/gnome/copyous_settings.ini" 2>/dev/null || true
 fi
 
 if [ -z "$(git -C "$HOME/.dotfiles" status --porcelain)" ]; then
