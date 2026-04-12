@@ -1,16 +1,20 @@
 #!/bin/bash
 # save.sh — Sauvegarde unifiée : GitHub (dotfiles) + Bitwarden (secrets) + Restic/OneDrive (données chiffrées)
 
-set -e
+set -euo pipefail
 export NODE_NO_WARNINGS=1
+
+DOTFILES_DIR="$HOME/.dotfiles"
+# shellcheck source=lib/common.sh
+source "$DOTFILES_DIR/lib/common.sh"
 
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
-log() { printf "%s\n" "$1" | tee -a "$LOG_FILE"; }
-
 mkdir -p "$BACKUP_DIR"
+detect_de
+
 log "======================================"
 log "🚀 Sauvegarde : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
@@ -18,11 +22,7 @@ log "======================================"
 # ─── 0. Prérequis ───────────────────────────────────────────────────────────
 if ! command -v restic &>/dev/null || ! command -v jq &>/dev/null; then
   log "📦 Installation des outils manquants..."
-  if command -v paru &>/dev/null; then
-    paru -S --noconfirm --needed restic jq >/dev/null
-  else
-    sudo pacman -S --noconfirm --needed restic jq >/dev/null
-  fi
+  install_packages restic jq
 fi
 
 # ─── 0.5 Vérification OneDrive ──────────────────────────────────────────────
@@ -30,58 +30,37 @@ log ""
 log "☁️  Vérification de OneDrive..."
 
 if ! systemctl is-active --quiet rclone-onedrive.service; then
-  log "  ⚠️  rclone-onedrive.service inactif — tentative de démarrage..."
+  log_warn "rclone-onedrive.service inactif — tentative de démarrage..."
   sudo systemctl start rclone-onedrive.service
 
   echo -n "  ⏳ Attente du montage OneDrive"
-  TIMEOUT=30
-  ELAPSED=0
-  while [ ! -d "$HOME/OneDrive" ] && [ "$ELAPSED" -lt "$TIMEOUT" ]; do
-    sleep 2
-    ELAPSED=$((ELAPSED + 2))
-    echo -n "."
-  done
-  echo ""
-
-  if [ ! -d "$HOME/OneDrive" ]; then
-    log "  ❌ OneDrive non disponible après ${TIMEOUT}s. Abandon."
+  if ! wait_for_dir "$HOME/OneDrive" 30; then
+    log_error "OneDrive non disponible. Abandon."
     exit 1
   fi
 fi
 
 log "  ✅ OneDrive monté et accessible."
 
-# ─── 1. Bitwarden — mot de passe Restic ─────────────────────────────────────
+# ─── 1. Bitwarden — login + unlock ──────────────────────────────────────────
+log ""
+log "🔐 Connexion à Bitwarden..."
+bw_login_unlock
+
+# ─── 2. Récupération du mot de passe Restic ──────────────────────────────────
 log ""
 log "🔐 Récupération du mot de passe Restic depuis Bitwarden..."
-
-BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null || echo "error")
-if [ "$BW_STATUS" = "unauthenticated" ]; then
-  bw login </dev/tty
-  BW_STATUS=$(bw status | jq -r '.status' 2>/dev/null)
-fi
-if [ "$BW_STATUS" = "locked" ]; then
-  echo -n "🔓 Mot de passe maître : " >/dev/tty
-  read -s -r BW_PASS </dev/tty
-  echo "" >/dev/tty
-  export BW_PASS BW_SESSION
-  BW_SESSION=$(bw unlock --raw --passwordenv BW_PASS)
-  unset BW_PASS
-fi
-
-bw sync --session "$BW_SESSION" >/dev/null 2>&1
 
 export RESTIC_PASSWORD
 RESTIC_PASSWORD=$(bw list items --search "Restic Password" --session "$BW_SESSION" 2>/dev/null |
   jq -r '.[] | select(.name == "Restic Password") | (.notes // .login.password // empty)')
 
 if [ -z "$RESTIC_PASSWORD" ]; then
-  log "❌ Mot de passe Restic introuvable dans Bitwarden."
+  log_error "Mot de passe Restic introuvable dans Bitwarden."
   exit 1
 fi
 log "  ✅ Mot de passe Restic récupéré."
 
-# Vérification du dépôt et suppression des verrous fantômes
 if ! restic snapshots &>/dev/null; then
   log "🆕 Initialisation du dépôt Restic..."
   restic init
@@ -90,12 +69,9 @@ else
   restic unlock >/dev/null 2>&1 || true
 fi
 
-# ─── 2. GitHub — Dotfiles ───────────────────────────────────────────────────
+# ─── 3. GitHub — Dotfiles ───────────────────────────────────────────────────
 log ""
 log "🐙 Sauvegarde GitHub des dotfiles..."
-
-IS_GNOME=false
-[[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]] && IS_GNOME=true
 
 if [ "$IS_GNOME" = true ]; then
   mkdir -p "$HOME/.dotfiles/gnome"
@@ -124,27 +100,27 @@ else
       if git -C "$HOME/.dotfiles" push -q origin master; then
         log "  ✅ Dotfiles pushés sur GitHub."
       else
-        log "  ⚠️  Push GitHub échoué."
+        log_warn "Push GitHub échoué."
       fi
     else
-      log "  ⚠️  Commit échoué."
+      log_warn "Commit échoué."
     fi
   else
     log "  ⏭️  Push GitHub ignoré par l'utilisateur."
   fi
 fi
 
-# ─── 3. Bitwarden — Secrets (SSH + rclone) ──────────────────────────────────
+# ─── 4. Bitwarden — Secrets (SSH + rclone) ──────────────────────────────────
 log ""
 log "🔑 Synchronisation des secrets vers Bitwarden..."
 if [ -f "$HOME/.dotfiles/savesecrets.sh" ]; then
   bash "$HOME/.dotfiles/savesecrets.sh" | tee -a "$LOG_FILE"
 else
-  log "  ⚠️  savesecrets.sh introuvable."
+  log_warn "savesecrets.sh introuvable."
 fi
 
-# ─── 4. Exclusions Restic ───────────────────────────────────────────────────
-EXCLUDES_FILE="/tmp/restic_excludes.txt"
+# ─── 5. Exclusions Restic ───────────────────────────────────────────────────
+EXCLUDES_FILE=$(mktemp /tmp/restic_excludes.XXXXXX)
 cat >"$EXCLUDES_FILE" <<'EOF'
 cache2
 Cache
@@ -170,16 +146,10 @@ session.json.backup
 ImapMail
 caches
 Preview-Cache
-stremio/cef/cache/Default/Cache
-stremio/cef/cache/Default/Code Cache
-stremio/cef/cache/Default/GPUCache
-stremio/cef/cache/Default/DawnGraphiteCache
-stremio/cef/cache/Default/DawnWebGPUCache
-stremio/cef/cache/Default/Service Worker/CacheStorage
-stremio/cef/cache/Default/blob_storage
+stremio/cef/cache
 EOF
 
-# ─── 5. Restic — Profils utilisateur ────────────────────────────────────────
+# ─── 6. Restic — Profils utilisateur ────────────────────────────────────────
 log ""
 log "📦 Sauvegarde des profils utilisateurs..."
 
@@ -191,11 +161,10 @@ USER_TARGETS=(
   "$HOME/.config/sunshine"
   "$HOME/.config/lg-buddy"
   "$HOME/.ssh/known_hosts"
-  "$HOME/.local/share/stremio/cef/cache/Default"
 )
 
 if pgrep -x thunderbird >/dev/null; then
-  log "  ⚠️  Thunderbird ouvert — ignoré."
+  log_warn "Thunderbird ouvert — ignoré."
 else
   USER_TARGETS+=("$HOME/.thunderbird")
 fi
@@ -211,26 +180,34 @@ set -e
 if [ "$USER_STATUS" -eq 0 ]; then
   log "  ✅ Profils utilisateurs sauvegardés."
 else
-  log "  ⚠️  Erreurs restic profils (voir log)."
+  log_warn "Erreurs restic profils (voir log)."
 fi
 
-# ─── 6. Restic — Fichiers système chiffrés (IPs, Fstab, VM) ─────────────────
+# ─── 7. Restic — Fichiers système chiffrés (IPs, Fstab, VM) ─────────────────
 log ""
 log "🔒 Sauvegarde des fichiers système (inclut les IP privées)..."
 
 NOM_VM="win11"
 VM_XML="/tmp/${NOM_VM}.xml"
-sudo virsh dumpxml "$NOM_VM" 2>/dev/null | tee "$VM_XML" >/dev/null || true
+sudo virsh dumpxml "$NOM_VM" 2>/dev/null > "$VM_XML" || true
+
+# Only include VM XML if non-empty
+SYS_TARGETS=(
+  "/var/lib/bluetooth"
+  "/etc/samba"
+  "/etc/fstab"
+  "/etc/systemd/system/mnt-calibreweb.mount"
+  "/etc/systemd/system/mnt-torrent.mount"
+  "/var/lib/libvirt/images/${NOM_VM}.qcow2"
+)
+
+if [ -s "$VM_XML" ]; then
+  SYS_TARGETS+=("$VM_XML")
+fi
 
 set +e
 sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
-  "/var/lib/bluetooth" \
-  "/etc/samba" \
-  "/etc/fstab" \
-  "/etc/systemd/system/mnt-calibreweb.mount" \
-  "/etc/systemd/system/mnt-torrent.mount" \
-  "/var/lib/libvirt/images/${NOM_VM}.qcow2" \
-  "$VM_XML" \
+  "${SYS_TARGETS[@]}" \
   --verbose \
   2>&1 | tee -a "$LOG_FILE"
 SYS_STATUS=${PIPESTATUS[0]}
@@ -241,15 +218,28 @@ rm -f "$EXCLUDES_FILE" "$VM_XML"
 if [ "$SYS_STATUS" -eq 0 ]; then
   log "  ✅ Fichiers système sauvegardés (Chiffrés)."
 else
-  log "  ⚠️  Erreurs restic système (voir log)."
+  log_warn "Erreurs restic système (voir log)."
 fi
 
-# ─── 7. Nettoyage snapshots ─────────────────────────────────────────────────
+# ─── 8. Nettoyage snapshots ─────────────────────────────────────────────────
 log ""
 log "🧹 Nettoyage des anciens snapshots..."
-restic forget --keep-last 10 --prune 2>/dev/null | grep -E "^(keep|remove|Applying|snapshots for)" | tee -a "$LOG_FILE" || true
+restic forget \
+  --keep-daily 7 \
+  --keep-weekly 4 \
+  --keep-monthly 6 \
+  --prune 2>/dev/null | grep -E "^(keep|remove|Applying|snapshots for)" | tee -a "$LOG_FILE" || true
 
-# ─── 8. Résumé final ────────────────────────────────────────────────────────
+# ─── 9. Vérification d'intégrité ─────────────────────────────────────────────
+log ""
+log "🔍 Vérification d'intégrité du dépôt..."
+if restic check 2>&1 | tee -a "$LOG_FILE"; then
+  log "  ✅ Dépôt Restic intact."
+else
+  log_warn "Problème d'intégrité détecté dans le dépôt Restic !"
+fi
+
+# ─── 10. Résumé final ────────────────────────────────────────────────────────
 log ""
 log "📊 Résumé des snapshots :"
 log "════════════════════════════════════════════════════════════"
@@ -264,3 +254,6 @@ log ""
 log "======================================"
 log "✅ Sauvegarde terminée : $(date '+%d/%m/%Y %H:%M:%S')"
 log "======================================"
+
+# Lock Bitwarden on exit
+bw lock &>/dev/null || true
