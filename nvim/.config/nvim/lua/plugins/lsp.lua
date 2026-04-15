@@ -88,6 +88,16 @@ return {
       })
 
       -- ════════════════════════════════════════════════════════════════════
+      -- BGforge-MLS Language Server
+      -- ════════════════════════════════════════════════════════════════════
+      vim.lsp.config["bgforge-mls"] = {
+        cmd = { "bgforge-mls-server", "--stdio" },
+        filetypes = { "weidu-baf", "weidu-d", "weidu-tp2", "fallout-worldmap-txt" },
+        root_markers = { ".git" },
+      }
+      vim.lsp.enable("bgforge-mls")
+
+      -- ════════════════════════════════════════════════════════════════════
       -- Diagnostic Configuration
       -- ════════════════════════════════════════════════════════════════════
       vim.diagnostic.config({

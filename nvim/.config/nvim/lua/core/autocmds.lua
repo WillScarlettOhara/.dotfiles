@@ -104,3 +104,24 @@ api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, { -- CursorHold
     end
   end,
 })
+
+-- BGforge-MLS filetype detection
+vim.filetype.add({
+  extension = {
+    tra = "weidu-tra",
+    baf = "weidu-baf",
+    d = "weidu-d",
+    tp2 = "weidu-tp2",
+    tpa = "weidu-tp2",
+    tph = "weidu-tp2",
+    tpp = "weidu-tp2",
+  },
+})
+
+-- BGforge-MLS commentstring
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "weidu-baf", "weidu-d", "weidu-tp2" },
+  callback = function()
+    vim.bo.commentstring = "// %s"
+  end,
+})

@@ -126,6 +126,50 @@ return {
         },
         auto_install = true,
       })
+      -- BGforge-MLS parser registration
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "TSUpdate",
+        callback = function()
+          local parsers = require("nvim-treesitter.parsers")
+          local url = "https://github.com/BGforgeNet/BGforge-MLS"
+
+          parsers.weidu_tra = {
+            install_info = {
+              url = url,
+              location = "grammars/weidu-tra",
+              queries = "grammars/weidu-tra/queries",
+            },
+          }
+          parsers.baf = {
+            install_info = {
+              url = url,
+              location = "grammars/weidu-baf",
+              queries = "grammars/weidu-baf/queries",
+            },
+          }
+          parsers.weidu_d = {
+            install_info = {
+              url = url,
+              location = "grammars/weidu-d",
+              queries = "grammars/weidu-d/queries",
+            },
+          }
+          parsers.weidu_tp2 = {
+            install_info = {
+              url = url,
+              location = "grammars/weidu-tp2",
+              queries = "grammars/weidu-tp2/queries",
+            },
+          }
+        end,
+      })
+
+      -- Map tree-sitter grammar names to Neovim filetypes
+      vim.treesitter.language.register("weidu_tra", "weidu-tra")
+      vim.treesitter.language.register("baf", "weidu-baf")
+      vim.treesitter.language.register("weidu_d", "weidu-d")
+      vim.treesitter.language.register("weidu_tp2", "weidu-tp2")
+
       -- Enable treesitter-based highlighting and indentation
       vim.api.nvim_create_autocmd("FileType", {
         callback = function()
