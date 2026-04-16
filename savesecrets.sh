@@ -115,7 +115,6 @@ else
   echo "  ⚠️  ~/.local/share/opencode/auth.json introuvable. Ignoré."
 fi
 
-
 # Note : Le mot de passe Restic doit être créé MANUELLEMENT dans Bitwarden
 # sous le nom "Restic Password" (notes ou login.password).
 # Il n'est jamais généré ici pour éviter de l'écraser accidentellement.

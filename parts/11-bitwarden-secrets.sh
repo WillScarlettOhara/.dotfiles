@@ -24,8 +24,14 @@ DNS_FALLBACK=$(echo "$NETWORK_CONFIG" | grep "^DNS_FALLBACK=" | cut -d= -f2)
 
 # 3. OpenCode Auth — tokens Copilot, API keys
 mkdir -p ~/.local/share/opencode
-bw list items --search "OpenCode Auth" --session "$BW_SESSION" 2>/dev/null |
-  jq -r '.[] | select(.name == "OpenCode Auth") | .notes // empty' > ~/.local/share/opencode/auth.json
+OC_AUTH=$(bw list items --search "OpenCode Auth" --session "$BW_SESSION" 2>/dev/null |
+  jq -r '.[] | select(.name == "OpenCode Auth") | .notes // empty')
+if [ -n "$OC_AUTH" ]; then
+  echo "$OC_AUTH" > ~/.local/share/opencode/auth.json
+  echo "  ✅ OpenCode Auth restauré."
+else
+  echo "  ⚠️  OpenCode Auth introuvable dans Bitwarden. Ignoré."
+fi
 
 bw lock &>/dev/null
 

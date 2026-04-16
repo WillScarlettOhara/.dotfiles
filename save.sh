@@ -143,19 +143,17 @@ saved-telemetry-pings
 scheduled-notifications
 session.json
 session.json.backup
-  ImapMail
-  caches
-  node_modules
-  package.json
-  package-lock.json
-  opencode.db*
-  opencode/log
-  opencode/snapshot
-  opencode/tool-output
-  opencode/plans
-  opencode/storage
-  caches
-  Preview-Cache
+ImapMail
+caches
+node_modules
+package.json
+package-lock.json
+opencode.db*
+opencode/log
+opencode/snapshot
+opencode/tool-output
+opencode/plans
+opencode/storage
 Preview-Cache
 stremio/cef/cache
 EOF
