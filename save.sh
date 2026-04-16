@@ -61,7 +61,7 @@ if [ -z "$RESTIC_PASSWORD" ]; then
 fi
 log "  ✅ Mot de passe Restic récupéré."
 
-if ! restic snapshots &>/dev/null; then
+if [ ! -f "$RESTIC_REPOSITORY/config" ]; then
   log "🆕 Initialisation du dépôt Restic..."
   restic init
 else
