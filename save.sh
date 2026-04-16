@@ -143,8 +143,19 @@ saved-telemetry-pings
 scheduled-notifications
 session.json
 session.json.backup
-ImapMail
-caches
+  ImapMail
+  caches
+  node_modules
+  package.json
+  package-lock.json
+  opencode.db*
+  opencode/log
+  opencode/snapshot
+  opencode/tool-output
+  opencode/plans
+  opencode/storage
+  caches
+  Preview-Cache
 Preview-Cache
 stremio/cef/cache
 EOF
@@ -154,6 +165,8 @@ log ""
 log "📦 Sauvegarde des profils utilisateurs..."
 
 USER_TARGETS=(
+  "$HOME/.config/opencode"
+  "$HOME/.local/share/opencode/auth.json"
   "$HOME/.config/mozilla/firefox"
   "$HOME/.config/libreoffice"
   "$HOME/.config/calibre"

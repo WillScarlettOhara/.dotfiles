@@ -12,6 +12,8 @@ else
 
   echo "  ⏳ Restauration des profils utilisateurs..."
   restic restore latest --target "$RESTORE_TMP/home" \
+    --include "$HOME/.config/opencode" \
+    --include "$HOME/.local/share/opencode/auth.json" \
     --include "$HOME/.config/sunshine" \
     --include "$HOME/.config/mozilla/firefox" \
     --include "$HOME/.thunderbird" \

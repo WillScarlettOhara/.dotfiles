@@ -22,6 +22,11 @@ NETWORK_CONFIG=$(bw list items --search "Network Config" --session "$BW_SESSION"
 DNS_PRIMARY=$(echo "$NETWORK_CONFIG" | grep "^DNS_PRIMARY=" | cut -d= -f2)
 DNS_FALLBACK=$(echo "$NETWORK_CONFIG" | grep "^DNS_FALLBACK=" | cut -d= -f2)
 
+# 3. OpenCode Auth — tokens Copilot, API keys
+mkdir -p ~/.local/share/opencode
+bw list items --search "OpenCode Auth" --session "$BW_SESSION" 2>/dev/null |
+  jq -r '.[] | select(.name == "OpenCode Auth") | .notes // empty' > ~/.local/share/opencode/auth.json
+
 bw lock &>/dev/null
 
 ACTIVE_CON=$(nmcli -t -f NAME connection show --active | head -n1)

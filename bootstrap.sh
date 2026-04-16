@@ -63,6 +63,12 @@ else
   sudo pacman -S --needed "${PACKAGES[@]}"
 fi
 
+# Installation d'OpenCode
+if ! command -v opencode &>/dev/null; then
+  echo "🤖 Installation d'OpenCode..."
+  curl -fsSL https://opencode.ai/install | bash
+fi
+
 sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 
 sudo modprobe fuse

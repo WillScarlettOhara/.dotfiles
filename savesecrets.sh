@@ -108,6 +108,14 @@ else
   echo "  ⚠️  ~/.config/rclone/rclone.conf introuvable. Ignoré."
 fi
 
+# 3. OpenCode Auth — tokens Copilot, API keys
+if [ -f ~/.local/share/opencode/auth.json ]; then
+  sync_secure_note "OpenCode Auth" "$(cat ~/.local/share/opencode/auth.json)"
+else
+  echo "  ⚠️  ~/.local/share/opencode/auth.json introuvable. Ignoré."
+fi
+
+
 # Note : Le mot de passe Restic doit être créé MANUELLEMENT dans Bitwarden
 # sous le nom "Restic Password" (notes ou login.password).
 # Il n'est jamais généré ici pour éviter de l'écraser accidentellement.
