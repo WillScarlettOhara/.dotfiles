@@ -5,13 +5,8 @@ echo ""
 echo "🎬 Installation de Stremio..."
 
 if command -v stremio &>/dev/null; then
-  echo "  ✅ Stremio déjà installé."
-  # Verify it actually launches (CEF lib check)
-  if ! LD_LIBRARY_PATH=/usr/lib/stremio/cef stremio --version &>/dev/null; then
-    echo "  ⚠️  Stremio ne se lance pas (CEF) — réinstallation..."
-  else
-    return 0
-  fi
+  echo "  ✅ Stremio déjà installé. Skip."
+  return 0
 fi
 
 # Write the patch script only when needed
