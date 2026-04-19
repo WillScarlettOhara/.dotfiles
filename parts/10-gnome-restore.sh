@@ -2,7 +2,7 @@
 # parts/10-gnome-restore.sh — Restore GNOME settings via dconf/gsettings
 
 if [ "$IS_GNOME" != true ]; then
-  exit 0
+  return 0
 fi
 
 echo ""
