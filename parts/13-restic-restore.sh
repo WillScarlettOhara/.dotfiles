@@ -39,6 +39,19 @@ sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD,RCLONE_CONFIG restic resto
   --include "/etc/libvirt/qemu/win11.xml" \
   > /dev/null || true
 
-# Recharger systemd au cas où des fichiers .mount auraient été restaurés
+sudo chmod 600 /etc/samba/.credentials 2>/dev/null || true
+
+if [ ! -f /etc/samba/smb.conf ]; then
+  sudo tee /etc/samba/smb.conf >/dev/null <<SMBEOF
+[global]
+   workgroup = WORKGROUP
+   client min protocol = SMB2
+SMBEOF
+fi
+
+if grep -q 'x-systemd.automount' /etc/fstab 2>/dev/null; then
+  sudo systemctl restart mnt-samba-data.automount 2>/dev/null || true
+fi
+
 sudo systemctl daemon-reload 2>/dev/null || true
 sudo systemctl restart bluetooth 2>/dev/null || true

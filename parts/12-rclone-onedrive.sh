@@ -53,7 +53,13 @@ sudo systemctl enable --now rclone-onedrive.service
 echo "  ⏳ Attente de la connexion à OneDrive..."
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 if ! wait_for_dir "$BACKUP_DIR" 60; then
-  echo "❌ OneDrive non disponible. Abandon."
-  return 1
+  echo "⚠️  OneDrive non disponible — nettoyage du cache et relance..."
+  sudo systemctl stop rclone-onedrive.service
+  rm -rf "$HOME/.cache/rclone/vfs" "$HOME/.cache/rclone/dir-cache"
+  sudo systemctl start rclone-onedrive.service
+  if ! wait_for_dir "$BACKUP_DIR" 60; then
+    echo "❌ OneDrive non disponible. Abandon."
+    return 1
+  fi
 fi
 echo " ✅ OneDrive connecté !"
