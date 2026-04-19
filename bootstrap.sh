@@ -74,7 +74,12 @@ else
   curl -fsSL https://opencode.ai/install | bash < /dev/null
 fi
 
-sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+if ! command -v calibre &>/dev/null; then
+  echo "  📥 Installation de Calibre..."
+  sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+else
+  echo "  ✅ Calibre déjà installé ($(calibre --version 2>/dev/null | head -1)). Skip."
+fi
 
 sudo modprobe fuse
 grep -qxF "user_allow_other" /etc/fuse.conf || echo "user_allow_other" | sudo tee -a /etc/fuse.conf

@@ -8,7 +8,7 @@ KEYBOARD_VENDOR="3151"
 KEYBOARD_PRODUCT="4010"
 
 KEYBOARD_BUS=$(lsusb | grep "${KEYBOARD_VENDOR}:${KEYBOARD_PRODUCT}" |
-  grep -o 'Bus [0-9]*' | awk '{printf "%d", $2}')
+  grep -o 'Bus [0-9]*' | awk '{printf "%d", $2}' || true)
 
 if [ -n "$KEYBOARD_BUS" ]; then
   KEYBOARD_PCI=$(readlink "/sys/bus/usb/devices/usb${KEYBOARD_BUS}" 2>/dev/null |
@@ -29,7 +29,7 @@ done
 BT_PATH=$(find /sys/bus/usb/devices/ -name "product" 2>/dev/null |
   while read -r f; do
     grep -qi "bluetooth" "$f" && dirname "$f"
-  done | head -1)
+  done | head -1 || true)
 
 if [ -n "$BT_PATH" ]; then
   echo disabled | sudo tee "$BT_PATH/power/wakeup" >/dev/null 2>&1 || true

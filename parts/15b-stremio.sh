@@ -64,6 +64,17 @@ install_stremio() {
   git clone https://aur.archlinux.org/stremio-linux-shell-git.git "$dir" 2>/dev/null ||
     git -C "$dir" pull --ff-only
 
+  # Ensure cargo uses the system git CLI (which has our SSH key) instead of
+  # its built-in libgit2, so private/authenticated repos like cef-rs work.
+  mkdir -p "${CARGO_HOME:-$HOME/.cargo}"
+  if ! grep -q 'git-fetch-with-cli' "${CARGO_HOME:-$HOME/.cargo}/config.toml" 2>/dev/null; then
+    cat >> "${CARGO_HOME:-$HOME/.cargo}/config.toml" <<'TOML'
+
+[net]
+git-fetch-with-cli = true
+TOML
+  fi
+
   (
     cd "$dir"
 
