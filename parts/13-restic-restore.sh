@@ -3,7 +3,7 @@
 
 echo ""
 echo "🔄 Restauration via Restic..."
-export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
+export RESTIC_REPOSITORY="rclone:OneDrive:Backup_PC/restic-repo"
 
 if ! restic snapshots &>/dev/null; then
   echo "  ⚠️  Aucun snapshot Restic trouvé. Première installation."

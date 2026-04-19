@@ -9,7 +9,7 @@ DOTFILES_DIR="$HOME/.dotfiles"
 source "$DOTFILES_DIR/lib/common.sh"
 
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
-export RESTIC_REPOSITORY="$BACKUP_DIR/restic-repo"
+export RESTIC_REPOSITORY="rclone:OneDrive:Backup_PC/restic-repo"
 LOG_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).log"
 
 mkdir -p "$BACKUP_DIR"
@@ -61,12 +61,12 @@ if [ -z "$RESTIC_PASSWORD" ]; then
 fi
 log "  ✅ Mot de passe Restic récupéré."
 
-if [ ! -f "$RESTIC_REPOSITORY/config" ]; then
-  log "🆕 Initialisation du dépôt Restic..."
-  restic init
-else
+if restic cat config >/dev/null 2>&1; then
   log "🔓 Nettoyage des verrous Restic résiduels..."
   restic unlock >/dev/null 2>&1 || true
+else
+  log "🆕 Initialisation du dépôt Restic..."
+  restic init
 fi
 
 # ─── 3. GitHub — Dotfiles ───────────────────────────────────────────────────
@@ -257,7 +257,7 @@ log "═════════════════════════
 restic snapshots --compact 2>/dev/null | tee -a "$LOG_FILE"
 log "════════════════════════════════════════════════════════════"
 
-REPO_SIZE=$(du -sh "$RESTIC_REPOSITORY" 2>/dev/null | cut -f1)
+REPO_SIZE=$(restic stats --mode raw-data 2>/dev/null | grep -i "total size" | awk '{print $3}')
 log ""
 log "💾 Taille du dépôt : $REPO_SIZE"
 log "📋 Log complet     : $LOG_FILE"
