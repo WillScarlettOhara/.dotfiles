@@ -27,7 +27,9 @@ restic restore latest --target / \
   > /dev/null || true
 
 echo "  ⏳ Restauration des configs système chiffrées (IPs, VM, fstab)..."
-sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic restore latest --target / \
+# rclone config lives in user home — tell sudo-spawned rclone where to find it
+export RCLONE_CONFIG="${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}"
+sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD,RCLONE_CONFIG restic restore latest --target / \
   --include "/var/lib/bluetooth" \
   --include "/etc/samba" \
   --include "/etc/fstab" \
