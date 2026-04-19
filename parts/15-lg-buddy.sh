@@ -2,7 +2,7 @@
 # parts/15-lg-buddy.sh — LG Buddy installation for GNOME
 
 if [ "$IS_GNOME" != true ]; then
-  exit 0
+  return 0
 fi
 
 echo ""
