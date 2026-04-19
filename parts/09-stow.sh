@@ -4,17 +4,10 @@
 echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-
 STOW_FOLDERS=(zsh tmux btop git nvim ghostty mpv lsd local-bin local-apps)
 
-# 1. Résolution des conflits : Sauvegarde des fichiers bloquants
-echo "📦 Vérification des conflits..."
-for file in ".zshrc" ".gitconfig" ".bashrc"; do
-  if [ -f "$HOME/$file" ] && [ ! -L "$HOME/$file" ]; then
-    echo "   ⚠️ Fichier existant détecté : ~/$file. Déplacement vers ~/${file}.bak"
-    mv "$HOME/$file" "$HOME/${file}.bak"
-  fi
-done
-
-# 2. Application de stow
-stow "${STOW_FOLDERS[@]}"
+# --adopt moves any pre-existing target files (e.g. ~/.gitconfig created by
+# step 6.5) into the stow package dir, then creates the symlinks.
+# git checkout restores the repo versions so adopted files don't overwrite them.
+stow --adopt "${STOW_FOLDERS[@]}"
+git checkout .
