@@ -10,7 +10,7 @@ if command -v stremio &>/dev/null; then
   if ! LD_LIBRARY_PATH=/usr/lib/stremio/cef stremio --version &>/dev/null; then
     echo "  ⚠️  Stremio ne se lance pas (CEF) — réinstallation..."
   else
-    exit 0
+    return 0
   fi
 fi
 
@@ -72,7 +72,7 @@ install_stremio() {
     else
       python3 /tmp/stremio_patch.py || {
         echo "  ❌ Patch échoué."
-        exit 1
+        return 1
       }
     fi
 
