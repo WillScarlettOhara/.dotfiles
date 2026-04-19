@@ -23,5 +23,5 @@ Before running the script on a fresh installation, you must have **4 secure note
 Open a terminal on your new machine (compatible with Arch Linux / CachyOS) and run:
 
 ```bash
-curl -fsSL [https://raw.githubusercontent.com/WillScarlettOhara/.dotfiles/master/bootstrap.sh](https://raw.githubusercontent.com/WillScarlettOhara/.dotfiles/master/bootstrap.sh) | bash
+curl -fsSL https://raw.githubusercontent.com/WillScarlettOhara/.dotfiles/master/bootstrap.sh | bash
 ```
