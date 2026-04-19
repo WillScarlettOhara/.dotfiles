@@ -2,7 +2,7 @@
 # parts/08-gjs-osk.sh — GNOME on-screen keyboard extension
 
 if [ "$IS_GNOME" != true ]; then
-  exit 0
+  return 0
 fi
 
 echo ""
