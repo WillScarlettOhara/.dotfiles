@@ -57,10 +57,10 @@ fi
 
 if command -v paru &>/dev/null; then
   paru -Syu --noconfirm
-  paru -S --needed "${PACKAGES[@]}"
+  paru -S --needed --noconfirm --skipreview "${PACKAGES[@]}"
 else
   sudo pacman -Syu --noconfirm
-  sudo pacman -S --needed "${PACKAGES[@]}"
+  sudo pacman -S --needed --noconfirm --skipreview "${PACKAGES[@]}"
 fi
 
 # Installation d'OpenCode
