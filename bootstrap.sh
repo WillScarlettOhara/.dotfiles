@@ -203,6 +203,10 @@ sudo chmod 600 /root/.ssh/id_rsa
 # ─── 6.5 Configuration de Git (Anonymisation) ───────────────────────────────
 echo ""
 echo "🛡️  Configuration de Git (Anonymisation Github)..."
+
+# Sécurité : Supprimer le lien s'il est cassé
+[ -L "$HOME/.gitconfig" ] && [ ! -e "$HOME/.gitconfig" ] && rm "$HOME/.gitconfig"
+
 if [ -z "$(git config --global --get user.name)" ]; then
   git config --global user.name "WillScarlettOhara"
   git config --global user.email "39462014+WillScarlettOhara@users.noreply.github.com"
