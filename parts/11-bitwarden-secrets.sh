@@ -10,7 +10,7 @@ RESTIC_PASSWORD=$(bw list items --search "Restic Password" --session "$BW_SESSIO
 
 if [ -z "$RESTIC_PASSWORD" ]; then
   echo "❌ Mot de passe Restic introuvable. Abandon."
-  exit 1
+  return 1
 fi
 
 mkdir -p ~/.config/rclone
