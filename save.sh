@@ -217,7 +217,8 @@ if [ -s "$VM_XML" ]; then
 fi
 
 set +e
-sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD restic backup \
+export RCLONE_CONFIG="${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}"
+sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD,RCLONE_CONFIG restic backup \
   "${SYS_TARGETS[@]}" \
   --verbose \
   2>&1 | tee -a "$LOG_FILE"
