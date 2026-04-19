@@ -210,7 +210,7 @@ fi
 echo ""
 echo "📂 Clone des dotfiles depuis GitHub..."
 if [ ! -d "$HOME/.dotfiles" ]; then
-  git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles"
+  git clone git@github.com:WillScarlettOhara/.dotfiles.git "$HOME/.dotfiles" < /dev/null
 fi
 
 # ─── 8+. Modules depuis parts/ ───────────────────────────────────────────────
