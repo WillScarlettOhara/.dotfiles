@@ -38,6 +38,7 @@ PACKAGES=(
   discord element-desktop
   xkb-qwerty-fr hunspell-en_gb hunspell-fr-comprehensive
   qemu-full libvirt virt-manager dnsmasq edk2-ovmf swtpm bridge-utils iptables-nft
+  flatpak
 )
 
 if [ "$IS_GNOME" = true ]; then
@@ -62,6 +63,11 @@ else
   sudo pacman -Syu --noconfirm
   sudo pacman -S --needed --noconfirm --skipreview "${PACKAGES[@]}"
 fi
+
+# ─── 1b. Flatpak — Moonlight ───────────────────────────────────────────────
+echo ""
+echo "🎮 Installation de Moonlight via Flatpak..."
+flatpak install --noninteractive flathub com.moonlight_stream.Moonlight 2>/dev/null || echo "  ⚠️  Moonlight : installation échouée."
 
 # ─── 1.5 Installation d'OpenCode ────────────────────────────────────────────
 echo ""

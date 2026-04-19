@@ -1,6 +1,8 @@
 [Desktop Entry]
 Name=Zoom +
-Exec=/home/wills/.local/bin/zoom-in.sh
+Exec=busctl --user call org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component invokeShortcut s view_zoom_in
 Icon=zoom-in
 Type=Application
 Categories=Utility;
+StartupNotify=false
+DBusActivatable=false
