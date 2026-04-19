@@ -63,11 +63,33 @@ else
   sudo pacman -S --needed --noconfirm --skipreview "${PACKAGES[@]}"
 fi
 
-# Installation d'OpenCode
-if ! command -v opencode &>/dev/null; then
-  echo "🤖 Installation d'OpenCode..."
-  curl -fsSL https://opencode.ai/install | bash
-fi
+# ─── 1.5 Installation / Mise à jour d'OpenCode ──────────────────────────────
+echo ""
+echo "🤖 Vérification d'OpenCode..."
+
+install_opencode() {
+  local latest_version
+  # Récupération de la dernière version via npm (qui est silencieux)
+  latest_version=$(npm show opencode-ai version 2>/dev/null || echo "0.0.0")
+
+  if command -v opencode &>/dev/null; then
+    local current_version
+    # Extraction propre des chiffres de la version actuelle (ex: 1.14.18)
+    current_version=$(opencode --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "0.0.0")
+    
+    if [ "$current_version" = "$latest_version" ] && [ "$current_version" != "0.0.0" ]; then
+      echo "  ✅ OpenCode est déjà à jour (v$current_version), skip."
+      return
+    fi
+    echo "  🔄 Mise à jour d'OpenCode (v$current_version -> v$latest_version)..."
+  else
+    echo "  📥 Installation d'OpenCode..."
+  fi
+
+  # Redirection de l'entrée standard pour éviter le syndrome du script "mangé"
+  curl -fsSL https://opencode.ai/install | bash < /dev/null
+}
+install_opencode
 
 sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 
