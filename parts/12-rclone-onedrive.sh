@@ -54,6 +54,6 @@ echo "  ⏳ Attente de la connexion à OneDrive..."
 BACKUP_DIR="$HOME/OneDrive/Backup_PC"
 if ! wait_for_dir "$BACKUP_DIR" 60; then
   echo "❌ OneDrive non disponible. Abandon."
-  exit 1
+  return 1
 fi
 echo " ✅ OneDrive connecté !"
