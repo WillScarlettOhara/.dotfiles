@@ -53,15 +53,19 @@ After=multi-user.target
 Type=oneshot
 ExecStart=/bin/bash -c '\
   set +e; \
-  KB_BUS=$(lsusb | grep "3151:4010" | grep -o "Bus [0-9]*" | awk "{printf \"%d\", \$2}"); \
+  KB_BUS=$(lsusb | grep "3151:4010" | grep -o "Bus [0-9]*" | grep -o "[0-9]*" | head -1); \
   KB_XHC=""; \
   if [ -n "$KB_BUS" ]; then \
     KB_PCI=$(basename "$(dirname "$(readlink /sys/bus/usb/devices/usb${KB_BUS})")"); \
-    [ -n "$KB_PCI" ] && KB_XHC=$(grep "$KB_PCI" /proc/acpi/wakeup | awk "{print \$1}"); \
+    [ -n "$KB_PCI" ] && KB_XHC=$(grep "$KB_PCI" /proc/acpi/wakeup | awk "{print \$$1}"); \
   fi; \
-  for dev in $(awk "/^XH/ {print \$1}" /proc/acpi/wakeup); do \
+  echo "Keyboard on XHC: ${KB_XHC:-NOT_FOUND}" >&2; \
+  for dev in $(awk "/^XH/ {print \$$1}" /proc/acpi/wakeup); do \
     [ "$dev" != "$KB_XHC" ] && echo "$dev" > /proc/acpi/wakeup; \
   done; \
+  if [ -n "$KB_XHC" ]; then \
+    echo "$KB_XHC" > /proc/acpi/wakeup; \
+  fi; \
   BT=$(find /sys/bus/usb/devices/ -name product 2>/dev/null | while read f; do grep -qi bluetooth "$f" && dirname "$f"; done | head -1); \
   [ -n "$BT" ] && echo disabled > "$BT/power/wakeup"; \
   true'
