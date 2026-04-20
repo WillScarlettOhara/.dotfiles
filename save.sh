@@ -199,8 +199,8 @@ log ""
 log "🔒 Sauvegarde des fichiers système (inclut les IP privées)..."
 
 NOM_VM="win11"
-VM_XML="/tmp/${NOM_VM}.xml"
-sudo virsh dumpxml "$NOM_VM" 2>/dev/null > "$VM_XML" || true
+VM_XML="/etc/libvirt/qemu/${NOM_VM}.xml"
+sudo virsh dumpxml "$NOM_VM" 2>/dev/null | sudo tee "$VM_XML" >/dev/null || true
 
 # Only include VM XML if non-empty
 SYS_TARGETS=(
@@ -225,7 +225,7 @@ sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD,RCLONE_CONFIG restic backu
 SYS_STATUS=${PIPESTATUS[0]}
 set -e
 
-rm -f "$EXCLUDES_FILE" "$VM_XML"
+rm -f "$EXCLUDES_FILE"
 
 if [ "$SYS_STATUS" -eq 0 ]; then
   log "  ✅ Fichiers système sauvegardés (Chiffrés)."
