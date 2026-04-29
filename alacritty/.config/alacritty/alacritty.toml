@@ -4,14 +4,14 @@ WINIT_X11_SCALE_FACTOR = "1"
 
 [window]
 dynamic_padding = true
-decorations = "none"
+decorations = "full"
 title = "Alacritty@CachyOS"
 opacity = 0.9
-startup_mode = "Maximized"
+decorations_theme_variant = "Dark"
 
 [window.dimensions]
-columns = 200
-lines = 50
+columns = 100
+lines = 30
 
 [window.class]
 instance = "Alacritty"
@@ -23,6 +23,31 @@ multiplier = 3
 
 [colors]
 transparent_background_colors = true
+draw_bold_text_with_bright_colors = true
+
+[colors.primary]
+background = "#1d2021"
+foreground = "#ebdbb2"
+
+[colors.normal]
+black = "#282828"
+red = "#cc241d"
+green = "#98971a"
+yellow = "#d79921"
+blue = "#458588"
+magenta = "#b16286"
+cyan = "#689d6a"
+white = "#a89984"
+
+[colors.bright]
+black = "#928374"
+red = "#fb4934"
+green = "#b8bb26"
+yellow = "#fabd2f"
+blue = "#83a598"
+magenta = "#d3869b"
+cyan = "#8ec07c"
+white = "#ebdbb2"
 
 [font]
 size = 12
@@ -138,37 +163,3 @@ action = "ResetFontSize"
 [general]
 live_config_reload = true
 working_directory = "None"
-import = [
-    "~/.config/alacritty/themes/themes/gruvbox_material_hard_dark.toml"
-]
-
-# # colors (miasma) https://github.com/xero/miasma.nvim
-# [colors]
-# indexed_colors = [{ index = 16, color = "0x222222" }]
-#
-# # Primary colors
-# [colors.primary]
-# background = "#1d2021"
-# foreground = "#ebdbb2"
-#
-# # Normal colors
-# [colors.normal]
-# black = "#222222"
-# red = "#685641"
-# green = "#5e875e"
-# yellow = "#bb7744"
-# blue = "#78814a"
-# magenta = "#bb7744"
-# cyan = "#c9a554"
-# white = "#d6c383"
-#
-# # Bright colors
-# [colors.bright]
-# black = "#666666"
-# red = "#685641"
-# green = "#5e875e"
-# yellow = "#bb7744"
-# blue = "#78814a"
-# magenta = "#bb7744"
-# cyan = "#c9a554"
-# white = "#d6c383"
