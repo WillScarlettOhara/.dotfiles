@@ -1,0 +1,6 @@
+#!/bin/bash
+
+exec alacritty \
+  --class OpenCode,OpenCode \
+  --title OpenCode \
+  -e env -u TMUX -u TMUX_PANE DOTFILES_SKIP_AUTO_TMUX=1 zsh -ic 'exec opencode'

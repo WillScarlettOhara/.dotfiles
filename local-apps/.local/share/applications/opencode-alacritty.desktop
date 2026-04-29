@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=OpenCode (Alacritty)
+Comment=Launch OpenCode in Alacritty outside tmux
+Exec=/home/wills/.local/bin/opencode-alacritty
+Icon=Alacritty
+Type=Application
+Categories=Development;TerminalEmulator;
+Terminal=false
+StartupWMClass=OpenCode

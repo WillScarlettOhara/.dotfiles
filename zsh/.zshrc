@@ -111,7 +111,8 @@ function zvm_config() {
 zinit light jeffreytse/zsh-vi-mode
 
 # Lancer ou s'attacher à tmux automatiquement au démarrage (TOUJOURS À LA FIN)
-if [[ -z "$TMUX" && -o interactive ]]; then
+# Certains lanceurs peuvent poser DOTFILES_SKIP_AUTO_TMUX=1 pour ouvrir un shell nu.
+if [[ -z "$TMUX" && -o interactive && -z "$DOTFILES_SKIP_AUTO_TMUX" ]]; then
   # Tue les sessions orphelines d'un autre shell
   for s in $(tmux list-sessions -F "#{session_name}:#{session_attached}" 2>/dev/null | grep ":0$" | cut -d: -f1); do
     tmux kill-session -t "$s" 2>/dev/null
