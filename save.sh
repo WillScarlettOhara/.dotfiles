@@ -86,6 +86,15 @@ if [ "$IS_GNOME" = true ]; then
   dconf dump /org/gnome/shell/extensions/copyous@boerdereinar.dev/ >"$HOME/.dotfiles/gnome/copyous_settings.ini" 2>/dev/null || true
 fi
 
+if [ "$IS_KDE" = true ]; then
+  mkdir -p "$HOME/.dotfiles/kde/.config"
+  cp "$HOME/.config/kdeglobals" "$HOME/.dotfiles/kde/.config/" 2>/dev/null || true
+  cp "$HOME/.config/kcminputrc" "$HOME/.dotfiles/kde/.config/" 2>/dev/null || true
+  cp "$HOME/.config/kwinrc" "$HOME/.dotfiles/kde/.config/" 2>/dev/null || true
+  cp "$HOME/.config/plasmarc" "$HOME/.dotfiles/kde/.config/" 2>/dev/null || true
+  log "  ✅ Fichiers KDE copiés dans les dotfiles."
+fi
+
 if [ -z "$(git -C "$HOME/.dotfiles" status --porcelain)" ]; then
   log "  ✅ Aucun changement dans les dotfiles."
 else

@@ -4,7 +4,7 @@
 echo ""
 echo "🔗 Application des dotfiles via stow..."
 cd "$HOME/.dotfiles"
-STOW_FOLDERS=(zsh tmux btop git nvim ghostty mpv lsd local-bin local-apps)
+STOW_FOLDERS=(zsh tmux btop git nvim ghostty mpv lsd local-bin local-apps kde)
 
 # --adopt moves any pre-existing target files (e.g. ~/.gitconfig created by
 # step 6.5) into the stow package dir, then creates the symlinks.

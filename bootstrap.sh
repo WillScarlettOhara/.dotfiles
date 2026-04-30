@@ -56,6 +56,15 @@ if [ "$IS_GNOME" = true ]; then
   )
 fi
 
+if [ "$IS_KDE" = true ]; then
+  PACKAGES+=(
+    plasma-workspace
+    kwin
+    kvantum
+    qt6ct
+  )
+fi
+
 if command -v paru &>/dev/null; then
   paru -Syu --noconfirm
   paru -S --needed --noconfirm --skipreview "${PACKAGES[@]}"

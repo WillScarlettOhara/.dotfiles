@@ -21,9 +21,13 @@ log_error() { log "$1" "ERROR"; }
 
 detect_de() {
   IS_GNOME=false
+  IS_KDE=false
   if [[ "${XDG_CURRENT_DESKTOP^^}" == *"GNOME"* ]]; then
     IS_GNOME=true
     log "🖥️  Environnement GNOME détecté."
+  elif [[ "${XDG_CURRENT_DESKTOP^^}" == *"KDE"* ]]; then
+    IS_KDE=true
+    log "🖥️  Environnement KDE détecté."
   fi
 }
 

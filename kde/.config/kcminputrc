@@ -1,0 +1,9 @@
+[Libinput][5426][126][RAZER Razer Mouse Dock]
+PointerAccelerationProfile=1
+
+[Libinput][5426][130][Basilisk X HyperSpeed Mouse]
+PointerAccelerationProfile=1
+
+[Mouse]
+cursorSize=48
+cursorTheme=capitaine-cursors-light
