@@ -78,7 +78,7 @@ return {
         {
           pane = 2,
           section = "terminal",
-          cmd = "COLORTERM=truecolor lsd --tree --depth 3 --color always --group-dirs last 2>/dev/null || tree -L 3 -C 2>/dev/null",
+          cmd = [[LS_COLORS="fi=223:*.lock=223:${LS_COLORS:-}" COLORTERM=truecolor lsd --tree --depth 3 --color always --group-dirs last 2>/dev/null || LS_COLORS="fi=223:*.lock=223:${LS_COLORS:-}" tree -L 3 -C 2>/dev/null]],
           title = "📁 Project",
           height = 50,
           padding = 1,
@@ -170,6 +170,9 @@ return {
         explorer = {
           hidden = true,
           ignored = true,
+          formatters = {
+            file = { git_status_hl = true, filename_only = true },
+          },
         },
         files = {
           hidden = true,
@@ -790,6 +793,14 @@ return {
     },
   },
   init = function()
+    -- Monkey-patch: keep a visible ! for ignored open dirs in explorer
+    local orig_file = require("snacks.picker.format").file
+    require("snacks.picker.format").file = function(item, picker)
+      if item.ignored and not item.status then
+        item.status = "!!"
+      end
+      return orig_file(item, picker)
+    end
     vim.api.nvim_create_autocmd("BufDelete", {
       callback = function(args)
         local b = args.buf

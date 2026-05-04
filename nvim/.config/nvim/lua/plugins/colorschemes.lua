@@ -22,6 +22,9 @@ return {
       hl(0, "SnacksDashboardKey", { fg = "#FABD2F", bold = true })
       hl(0, "SnacksDashboardIcon", { fg = "#B8BB26" })
       hl(0, "SnacksDashboardDesc", { fg = "#ebdbb2" })
+      hl(0, "SnacksDashboardFile", { fg = "#FABD2F" })
+      hl(0, "SnacksDashboardDir", { fg = "#A89984" })
+      hl(0, "SnacksDashboardTerminal", { fg = "#A89984" })
 
       -- Snacks indentline (Arc-en-ciel fidèle à l'image)
       hl(0, "SnacksIndent1", { fg = "#FB4934" }) -- red
@@ -32,8 +35,19 @@ return {
       hl(0, "SnacksIndent6", { fg = "#83A598" }) -- blue
       hl(0, "SnacksIndent7", { fg = "#D3869B" }) -- purple
 
-      -- Snacks picker
-      hl(0, "SnacksPickerDir", { fg = "#928374" }) -- grey1
+      -- Snacks picker / explorer
+      hl(0, "SnacksPickerDir", { fg = "#A89984" })
+      hl(0, "SnacksPickerFile", { fg = "#ebdbb2" })
+      hl(0, "SnacksPickerDirectory", { fg = "#FABD2F", bold = true })
+      hl(0, "SnacksPickerPathIgnored", { fg = "#BDAE93", italic = true })
+      hl(0, "SnacksPickerPathHidden", { fg = "#A89984" })
+      hl(0, "SnacksPickerGitStatusUntracked", { fg = "#A89984", italic = true })
+      hl(0, "SnacksPickerGitStatusIgnored", { fg = "#BDAE93", italic = true })
+      hl(0, "SnacksPickerGitStatusModified", { fg = "#FABD2F" })
+      hl(0, "SnacksPickerGitStatusStaged", { fg = "#B8BB26" })
+      hl(0, "SnacksPickerGitStatusDeleted", { fg = "#FB4934" })
+      hl(0, "SnacksPickerGitStatusRenamed", { fg = "#D3869B" })
+      hl(0, "SnacksPickerGitStatusUnmerged", { fg = "#FE8019" })
 
       -- Rainbow delimiters (Arc-en-ciel fidèle à l'image)
       hl(0, "RainbowDelimiter1", { fg = "#FB4934" }) -- red
