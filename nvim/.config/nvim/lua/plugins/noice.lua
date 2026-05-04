@@ -6,6 +6,10 @@ return {
   },
   config = function()
     require("noice").setup({
+      -- Snacks.notifier handles all notifications. We disable Noice's notify
+      -- routing to avoid duplicate messages.
+      notify = { enabled = false },
+      messages = { enabled = false },
       lsp = {
         override = {
           ["vim.lsp.util.convert_input_to_markdown_lines"] = true,

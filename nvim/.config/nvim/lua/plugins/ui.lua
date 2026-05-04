@@ -91,6 +91,7 @@ return {
         { "<leader>l", group = "LSP" },
         { "<leader>m", group = "Markdown" },
         { "<leader>n", group = "Notifications" },
+        { "<leader>r", group = "Rust", icon = { icon = "󱘗", color = "orange" } },
         { "<leader>s", group = "Search" },
         { "<leader>u", group = "UI/Toggle" },
         { "<leader>w", group = "Windows" },

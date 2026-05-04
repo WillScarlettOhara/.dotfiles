@@ -114,7 +114,8 @@ return {
       blade = { "phpstan" },
       ruby = { "rubocop" },
       eruby = { "erb_lint" },
-      rust = { "clippy" },
+      -- rust: clippy is handled natively by rustaceanvim/rust-analyzer
+      -- rust = { "clippy" },
       yaml = { "yamllint" },
       ["yaml.docker-compose"] = { "yamllint" },
       json = { "jsonlint" },
@@ -170,7 +171,21 @@ return {
       end
       local ft = vim.bo[bufnr].filetype
       local linters = lint.linters_by_ft[ft]
-      return linters and #linters > 0
+      if not linters or #linters == 0 then
+        return false
+      end
+      -- Skip clippy when not inside a Cargo project (avoids `cargo` exit 101 spam)
+      if ft == "rust" then
+        local fname = vim.api.nvim_buf_get_name(bufnr)
+        if fname == "" then
+          return false
+        end
+        local found = vim.fs.find("Cargo.toml", { upward = true, path = vim.fs.dirname(fname) })
+        if #found == 0 then
+          return false
+        end
+      end
+      return true
     end
 
     -- ══════════════════════════════════════════════════════════════════════════

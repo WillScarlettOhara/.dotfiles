@@ -134,50 +134,43 @@ return {
     lazy = false,
     dependencies = { "neovim/nvim-lspconfig" },
     config = function()
-      local mason_lspconfig = require("mason-lspconfig")
-      local lspconfig = require("lspconfig")
+      -- Per-server overrides via vim.lsp.config (Neovim 0.11+ API).
+      -- mason-lspconfig 2.x auto-enables installed servers; we only need to
+      -- (1) opt-out servers we want to handle ourselves (e.g. rust_analyzer
+      --     handled by rustaceanvim), and (2) tweak per-server settings.
+      vim.lsp.config("lua_ls", {
+        settings = {
+          Lua = {
+            -- lazydev.nvim handles workspace/library config
+            telemetry = { enable = false },
+          },
+        },
+      })
 
-      local function default_setup(server_name)
-        lspconfig[server_name].setup({})
-      end
-
-      local handlers = {
-        default_setup,
-
-        -- disable mason rust_analyzer so rustaceanvim handles rust
-        ["rust_analyzer"] = function() end,
-
-        ["lua_ls"] = function()
-          lspconfig.lua_ls.setup({
-            settings = {
-              Lua = {
-                -- lazydev.nvim s'occupe de TOUT le reste (API vim, workspace, etc.)
-                telemetry = { enable = false },
-              },
-            },
-          })
-        end,
-
-        ["intelephense"] = function()
-          local get_license = function()
+      vim.lsp.config("intelephense", {
+        cmd = { "intelephense", "--stdio" },
+        filetypes = { "php", "blade" },
+        root_markers = { "composer.json", ".git" },
+        init_options = {
+          licenceKey = (function()
             local f = io.open(os.getenv("HOME") .. "/intelephense/license.txt", "rb")
-            if f then
-              local content = f:read("*a")
-              f:close()
-              return string.gsub(content, "%s+", "")
+            if not f then
+              return ""
             end
-            return "" -- Retourne vide au lieu de crasher
-          end
-          lspconfig.intelephense.setup({
-            cmd = { "intelephense", "--stdio" },
-            filetypes = { "php", "blade" },
-            root_dir = lspconfig.util.root_pattern("composer.json", ".git"),
-            init_options = { licenceKey = get_license() },
-          })
-        end,
-      }
+            local content = f:read("*a")
+            f:close()
+            return (content:gsub("%s+", ""))
+          end)(),
+        },
+      })
 
-      mason_lspconfig.setup({ handlers = handlers })
+      require("mason-lspconfig").setup({
+        -- Auto-enable all installed servers EXCEPT rust_analyzer
+        -- (rustaceanvim spins up its own rust-analyzer instance)
+        automatic_enable = {
+          exclude = { "rust_analyzer" },
+        },
+      })
     end,
   },
   {
@@ -219,7 +212,7 @@ return {
           "black",
           "isort",
           "shfmt",
-          "pint",
+          -- "pint", -- Laravel formatter, requires PHP/composer; install manually if needed
         },
       })
     end,

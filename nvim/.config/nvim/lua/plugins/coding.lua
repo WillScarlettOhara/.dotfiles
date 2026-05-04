@@ -199,7 +199,26 @@ return {
   -- ════════════════════════════════════════════════════════════════════════════
   {
     "windwp/nvim-ts-autotag",
-    event = { "BufReadPost", "BufNewFile" },
-    opts = {},
+    ft = {
+      "html",
+      "xml",
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact",
+      "vue",
+      "svelte",
+      "astro",
+      "markdown",
+      "php",
+      "blade",
+    },
+    opts = {
+      opts = {
+        enable_close = true,
+        enable_rename = true,
+        enable_close_on_slash = false,
+      },
+    },
   },
 }
