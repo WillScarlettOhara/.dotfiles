@@ -35,7 +35,9 @@ return {
                 { "<leader>rm", desc = "Expand Macro" },
                 { "<leader>rc", desc = "Open Cargo.toml" },
                 { "<leader>re", desc = "Explain Error" },
-                { "<leader>rD", desc = "Render Diagnostic" },
+                 { "<leader>rD", desc = "Render Diagnostic" },
+                 { "<leader>ro", desc = "Open docs.rs" },
+                 { "<leader>r?", desc = "Rust Cheat Sheet" },
               })
             end
 
@@ -83,6 +85,16 @@ return {
             map("n", "<leader>rD", function()
               vim.cmd.RustLsp("renderDiagnostic")
             end, "Render Diagnostic")
+
+            -- Open docs.rs for symbol under cursor
+            map("n", "<leader>ro", function()
+              vim.cmd.RustLsp("openDocs")
+            end, "Open docs.rs")
+
+            -- Open Rust Cheat Sheet (cheats.rs)
+            map("n", "<leader>r?", function()
+              vim.fn.system("xdg-open https://cheats.rs")
+            end, "Rust Cheat Sheet")
 
             -- Signature help already set globally in lsp.lua (<C-k>)
           end,
