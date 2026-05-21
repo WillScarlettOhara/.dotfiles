@@ -31,7 +31,7 @@ echo "📦 Installation des paquets du système..."
 
 PACKAGES=(
   base-devel jq stow git openssh sshfs unzip wget rclone restic curl tar gzip
-  zoxide wl-clipboard ttf-jetbrains-mono-nerd qt6ct
+  docker docker-compose zoxide wl-clipboard ttf-jetbrains-mono-nerd qt6ct
   nodejs npm python python-pip jre-openjdk luarocks tree-sitter
   tmux ghostty lazygit ripgrep lsd zsh-theme-powerlevel10k
   neovim-git mpv firefox thunderbird libreoffice-fresh sigil sunshine
@@ -210,15 +210,15 @@ mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
 BW_SSH_JSON=$(bw list items --search "SSH GitHub" --session "$BW_SESSION" 2>/dev/null |
   jq -r '.[] | select(.name == "SSH GitHub")')
-echo "$BW_SSH_JSON" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_rsa
-echo "$BW_SSH_JSON" | jq -r '.sshKey.publicKey  // empty' >~/.ssh/id_rsa.pub
-chmod 600 ~/.ssh/id_rsa && chmod 644 ~/.ssh/id_rsa.pub
+echo "$BW_SSH_JSON" | jq -r '.sshKey.privateKey // empty' >~/.ssh/id_ed25519
+echo "$BW_SSH_JSON" | jq -r '.sshKey.publicKey  // empty' >~/.ssh/id_ed25519.pub
+chmod 600 ~/.ssh/id_ed25519 && chmod 644 ~/.ssh/id_ed25519.pub
 
 ssh-keyscan github.com >>~/.ssh/known_hosts 2>/dev/null
 chmod 644 ~/.ssh/known_hosts
 
-sudo cp ~/.ssh/id_rsa /root/.ssh/id_rsa && sudo chown root:root /root/.ssh/id_rsa
-sudo chmod 600 /root/.ssh/id_rsa
+sudo cp ~/.ssh/id_ed25519 /root/.ssh/id_ed25519 && sudo chown root:root /root/.ssh/id_ed25519
+sudo chmod 600 /root/.ssh/id_ed25519
 
 # ─── 6.5 Configuration de Git (Anonymisation) ───────────────────────────────
 echo ""

@@ -42,6 +42,35 @@ fi
 
 log "  ✅ OneDrive monté et accessible."
 
+# ─── 0.7 Mise à jour Bitwarden CLI ────────────────────────────────────────────
+log ""
+log "🔄 Vérification de Bitwarden CLI..."
+
+latest_bw_version=$(curl -s "https://api.github.com/repos/bitwarden/clients/releases" |
+  jq -r '[.[] | select(.name | contains("CLI"))][0].tag_name' | sed 's/cli-v//' || echo "")
+
+if command -v bw &>/dev/null; then
+  current_bw_version=$(NODE_NO_WARNINGS=1 bw --version 2>/dev/null || echo "0.0.0")
+  if [ "$current_bw_version" = "$latest_bw_version" ] && [ "$current_bw_version" != "0.0.0" ]; then
+    log "  ✅ Bitwarden CLI déjà à jour ($current_bw_version)."
+  else
+    log "  📥 Mise à jour $current_bw_version → $latest_bw_version..."
+    sudo rm -f /usr/local/bin/bw 2>/dev/null || true
+    wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
+    unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
+    sudo install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
+    rm -rf /tmp/bw.zip /tmp/bw_extract
+    log "  ✅ Bitwarden CLI → $latest_bw_version."
+  fi
+else
+  log "  📥 Installation de Bitwarden CLI..."
+  wget -q "https://vault.bitwarden.com/download/?app=cli&platform=linux" -O /tmp/bw.zip
+  unzip -q -o /tmp/bw.zip -d /tmp/bw_extract
+  sudo install -m 755 /tmp/bw_extract/bw /usr/local/bin/bw
+  rm -rf /tmp/bw.zip /tmp/bw_extract
+  log "  ✅ Bitwarden CLI installé."
+fi
+
 # ─── 1. Bitwarden — login + unlock ──────────────────────────────────────────
 log ""
 log "🔐 Connexion à Bitwarden..."
@@ -181,6 +210,7 @@ USER_TARGETS=(
   "$HOME/.config/sunshine"
   "$HOME/.config/lg-buddy"
   "$HOME/.ssh/known_hosts"
+  "$HOME/.local/share/rustdesk-server"
 )
 
 if pgrep -x thunderbird >/dev/null; then
@@ -208,8 +238,8 @@ log ""
 log "🔒 Sauvegarde des fichiers système (inclut les IP privées)..."
 
 NOM_VM="win11"
-VM_XML="/etc/libvirt/qemu/${NOM_VM}.xml"
-sudo virsh dumpxml "$NOM_VM" 2>/dev/null | sudo tee "$VM_XML" >/dev/null || true
+VM_XML="$HOME/VMs/${NOM_VM}.xml"
+virsh -c qemu:///session dumpxml "$NOM_VM" > "$VM_XML" 2>/dev/null || true
 
 # Only include VM XML if non-empty
 SYS_TARGETS=(
@@ -218,7 +248,7 @@ SYS_TARGETS=(
   "/etc/fstab"
   "/etc/systemd/system/mnt-calibreweb.mount"
   "/etc/systemd/system/mnt-torrent.mount"
-  "/var/lib/libvirt/images/${NOM_VM}.qcow2"
+  "$HOME/VMs/${NOM_VM}.qcow2"
 )
 
 if [ -s "$VM_XML" ]; then

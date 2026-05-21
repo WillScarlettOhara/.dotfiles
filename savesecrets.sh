@@ -48,6 +48,7 @@ _item_exists() {
 
 sync_ssh_key() {
   local name="$1"
+  local key_path="${2:-$HOME/.ssh/id_ed25519}"
   echo ""
   echo "  🗝️  Clé SSH '$name'..."
   if _item_exists "$name"; then
@@ -55,9 +56,9 @@ sync_ssh_key() {
     return
   fi
   local priv pub fp
-  priv=$(cat ~/.ssh/id_rsa)
-  pub=$(cat ~/.ssh/id_rsa.pub)
-  fp=$(ssh-keygen -lf ~/.ssh/id_rsa.pub | awk '{print $2}')
+  priv=$(cat "${key_path}")
+  pub=$(cat "${key_path}.pub")
+  fp=$(ssh-keygen -lf "${key_path}.pub" | awk '{print $2}')
   bw get template item | \
     jq --arg priv "$priv" --arg pub "$pub" --arg fp "$fp" --arg name "$name" \
       '.type = 5 | .name = $name | .sshKey = {
@@ -95,10 +96,11 @@ sync_secure_note() {
 # ─── Synchronisation ────────────────────────────────────────────────────────
 
 # 1. Clé SSH — nécessaire pour git clone au bootstrap
-if [ -f ~/.ssh/id_rsa ] && [ -f ~/.ssh/id_rsa.pub ]; then
-  sync_ssh_key "SSH GitHub"
+SSH_KEY_PATH="$HOME/.ssh/id_ed25519"
+if [ -f "$SSH_KEY_PATH" ] && [ -f "${SSH_KEY_PATH}.pub" ]; then
+  sync_ssh_key "SSH GitHub" "$SSH_KEY_PATH"
 else
-  echo "  ⚠️  ~/.ssh/id_rsa introuvable. Ignoré."
+  echo "  ⚠️  $SSH_KEY_PATH introuvable. Ignoré."
 fi
 
 # 2. Config rclone — nécessaire pour monter OneDrive avant restic
