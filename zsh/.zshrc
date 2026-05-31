@@ -119,3 +119,13 @@ if [[ -z "$TMUX" && -o interactive && -z "$DOTFILES_SKIP_AUTO_TMUX" ]]; then
   done
   exec tmux new-session -A -s main
 fi
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# GhidraSQL
+export PATH="$PATH:/home/wills/projects/IWD2-RE/ghidrasql/build/bin"
+export GHIDRA_INSTALL_DIR=/opt/ghidra_12.0.4_PUBLIC
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+export PATH="$PATH:/opt/ghidra_12.0.4_PUBLIC"
