@@ -239,6 +239,8 @@ log "🔒 Sauvegarde des fichiers système (inclut les IP privées)..."
 
 NOM_VM="win11"
 VM_XML="$HOME/VMs/${NOM_VM}.xml"
+VM_DISK="/vmstore/${NOM_VM}.qcow2"   # disque déplacé hors de /home pour libérer de la place
+VM_VARS="$HOME/VMs/${NOM_VM}_VARS.fd"
 virsh -c qemu:///session dumpxml "$NOM_VM" > "$VM_XML" 2>/dev/null || true
 
 # Only include VM XML if non-empty
@@ -248,8 +250,9 @@ SYS_TARGETS=(
   "/etc/fstab"
   "/etc/systemd/system/mnt-calibreweb.mount"
   "/etc/systemd/system/mnt-torrent.mount"
-  "$HOME/VMs/${NOM_VM}.qcow2"
 )
+[ -f "$VM_DISK" ] && SYS_TARGETS+=("$VM_DISK")
+[ -f "$VM_VARS" ] && SYS_TARGETS+=("$VM_VARS")
 
 if [ -s "$VM_XML" ]; then
   SYS_TARGETS+=("$VM_XML")

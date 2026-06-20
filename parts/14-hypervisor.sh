@@ -8,6 +8,11 @@ sudo mkdir -p /mnt/calibreweb /mnt/torrent /mnt/2TB /mnt/samba/data
 sudo chown "$USER:$USER" /mnt/calibreweb /mnt/torrent
 sudo mkdir -p /etc/samba
 
+# Disque VM hors de /home (déplacé pour libérer de la place sur /home)
+sudo mkdir -p /vmstore
+sudo chown "$USER:$USER" /vmstore
+[ -f /vmstore/win11.qcow2 ] && sudo chown "$USER:$USER" /vmstore/win11.qcow2 || true
+
 VIRTIO_ISO="$HOME/VMs/virtio-win.iso"
 if [ ! -f "$VIRTIO_ISO" ]; then
   mkdir -p "$HOME/VMs"

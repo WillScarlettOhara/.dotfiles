@@ -35,8 +35,9 @@ sudo --preserve-env=RESTIC_REPOSITORY,RESTIC_PASSWORD,RCLONE_CONFIG restic resto
   --include "/etc/fstab" \
   --include "/etc/systemd/system/mnt-calibreweb.mount" \
   --include "/etc/systemd/system/mnt-torrent.mount" \
-  --include "$HOME/VMs/win11.qcow2" \
+  --include "/vmstore/win11.qcow2" \
   --include "$HOME/VMs/win11.xml" \
+  --include "$HOME/VMs/win11_VARS.fd" \
   > /dev/null || true
 
 sudo chmod 600 /etc/samba/.credentials 2>/dev/null || true
