@@ -41,3 +41,8 @@ window-padding-y = 10
 
 # ─── Comportement ───
 confirm-close-surface = false
+
+# ─── Récup souris (bug Ghostty: reporting souris latché OFF dans tmux) ───
+# Quand clics/molette meurent partout (tous panes/windows), presser 2x pour
+# re-init le reporting souris sans redémarrer Ghostty (off puis on).
+keybind = ctrl+shift+m=toggle_mouse_reporting
